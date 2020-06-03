@@ -88,11 +88,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// the first request will either succeed or return a 401
 	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 	res, err := tr.RoundTrip(req)
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != http.StatusUnauthorized {
-		return res, nil
+	if err != nil || res.StatusCode == http.StatusUnauthorized {
+		return res, err
 	}
 	// close the first message body
 	res.Body.Close()
