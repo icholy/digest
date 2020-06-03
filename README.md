@@ -39,7 +39,7 @@ func main() {
     Username: "foo",
     Password: "bar",
     Method:   http.MethodGet,
-    URI:      "/some_outdated_service"
+    URI:      "/some_outdated_service",
     Count:    1,
   })
   req.Header.Set("Authorization", cred.String())
@@ -49,7 +49,7 @@ func main() {
     Username: "foo",
     Password: "bar",
     Method:   http.MethodGet,
-    URI:      "/some_outdated_service"
+    URI:      "/some_outdated_service",
     Count:    2,
   })
   req2.Header.Set("Authorization", cred.String())
