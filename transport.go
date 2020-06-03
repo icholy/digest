@@ -1,6 +1,8 @@
 package digest
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -67,6 +69,16 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if tr == nil {
 		tr = http.DefaultTransport
 	}
+	// we have to copy the body into memory in case we need
+	// to send a second request
+	var body []byte
+	if req.Body != nil {
+		var err error
+		body, err = ioutil.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// don't modify the original request
 	req = req.Clone(req.Context())
 	// try to authorize the request using a cached challenge
@@ -74,6 +86,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// the first request will either succeed or return a 401
+	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 	res, err := tr.RoundTrip(req)
 	if err != nil {
 		return nil, err
@@ -91,5 +104,6 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := t.authorize(req); err != nil {
 		return nil, err
 	}
+	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 	return tr.RoundTrip(req)
 }
