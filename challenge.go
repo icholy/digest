@@ -10,7 +10,6 @@ import (
 // Challenge is a challange sent in the WWW-Authenticate header
 type Challenge struct {
 	Realm     string
-	URI       string
 	Domain    []string
 	Nonce     string
 	Opaque    string
@@ -49,8 +48,6 @@ func ParseChallenge(s string) (*Challenge, error) {
 			c.Domain = strings.Fields(p.Value)
 		case "nonce":
 			c.Nonce = p.Value
-		case "uri":
-			c.URI = p.Value
 		case "algorithm":
 			c.Algorithm = p.Value
 		case "stale":
