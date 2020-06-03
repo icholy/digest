@@ -63,6 +63,15 @@ func TestParam(t *testing.T) {
 				{Key: "key", Value: "value-with-dashes"},
 			},
 		},
+		{
+			input: `realm="If you forgot password, write", nonce="my_nonce", opaque="my_opaque", qop="auth"`,
+			params: []Param{
+				{Key: "realm", Value: "If you forgot password, write", Quote: true},
+				{Key: "nonce", Value: "my_nonce", Quote: true},
+				{Key: "opaque", Value: "my_opaque", Quote: true},
+				{Key: "qop", Value: "auth", Quote: true},
+			},
+		},
 	}
 	for i, tt := range tests {
 		tt := tt
@@ -80,7 +89,7 @@ func TestParam(t *testing.T) {
 				if tt.err != "" {
 					return
 				}
-				assert.Equal(t, Format(tt.params...), tt.input)
+				assert.DeepEqual(t, Format(tt.params...), tt.input)
 			})
 		})
 	}
