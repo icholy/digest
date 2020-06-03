@@ -1,7 +1,6 @@
 package digest
 
 import (
-	"context"
 	"net/http"
 	"sync"
 )
@@ -69,7 +68,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		tr = http.DefaultTransport
 	}
 	// don't modify the original request
-	req = req.Clone(context.Background())
+	req = req.Clone(req.Context())
 	// try to authorize the request using a cached challenge
 	if err := t.authorize(req); err != nil {
 		return nil, err
