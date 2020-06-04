@@ -8,6 +8,7 @@ import (
 	"github.com/icholy/digest/internal/param"
 )
 
+// Credentials is a parsed version of the Authorization header
 type Credentials struct {
 	Username  string
 	Realm     string
@@ -21,6 +22,7 @@ type Credentials struct {
 	Nc        int
 }
 
+// ParseCredentials parses the Authorization header value into credentials
 func ParseCredentials(s string) (*Credentials, error) {
 	if !IsDigest(s) {
 		return nil, errors.New("digest: invalid credentials prefix")
@@ -62,6 +64,7 @@ func ParseCredentials(s string) (*Credentials, error) {
 	return &c, nil
 }
 
+// String formats the credentials into the header format
 func (c *Credentials) String() string {
 	var pp []param.Param
 	pp = append(pp,
