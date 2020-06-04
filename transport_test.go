@@ -60,3 +60,20 @@ func TestTransport(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, string(body), "Hello World")
 }
+
+var live = false
+
+func TestTransportHTTPBin(t *testing.T) {
+	if !live {
+		t.SkipNow()
+	}
+	client := http.Client{
+		Transport: &Transport{
+			Username: "foo",
+			Password: "bar",
+		},
+	}
+	res, err := client.Get("http://httpbin.org/digest-auth/auth/foo/bar")
+	assert.NilError(t, err)
+	assert.Assert(t, res.StatusCode == http.StatusOK)
+}
