@@ -22,6 +22,8 @@ type Transport struct {
 	domains   map[string]*cached
 }
 
+// save parses the digest challenge from the response
+// and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
 	chal, err := ParseChallenge(res.Header.Get("WWW-Authenticate"))
 	if err != nil {
@@ -37,6 +39,8 @@ func (t *Transport) save(res *http.Response) error {
 	return nil
 }
 
+// authorize attempts to find a cached challenge that matches the
+// requested domain, and use it to set the Authorization header
 func (t *Transport) authorize(req *http.Request) error {
 	t.domainsMu.Lock()
 	defer t.domainsMu.Unlock()
