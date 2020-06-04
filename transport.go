@@ -2,6 +2,7 @@ package digest
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -25,7 +26,11 @@ type Transport struct {
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
-	chal, err := ParseChallenge(res.Header.Get("WWW-Authenticate"))
+	header := res.Header.Get("WWW-Authenticate")
+	if header == "" {
+		return errors.New("missing WWW-Authenticate header")
+	}
+	chal, err := ParseChallenge(header)
 	if err != nil {
 		return err
 	}
