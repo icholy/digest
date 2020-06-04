@@ -38,8 +38,8 @@ func main() {
   cred, _ := digest.Digest(chal, digest.Options{
     Username: "foo",
     Password: "bar",
-    Method:   http.MethodGet,
-    URI:      "/some_outdated_service",
+    Method:   req.Method,
+    URI:      req.URL.RequestURI(),
     Count:    1,
   })
   req.Header.Set("Authorization", cred.String())
@@ -48,8 +48,8 @@ func main() {
   cred2, _ := digest.Digest(chal, digest.Options{
     Username: "foo",
     Password: "bar",
-    Method:   http.MethodGet,
-    URI:      "/some_outdated_service",
+    Method:   req2.Method,
+    URI:      req2.URL.RequestURI(),
     Count:    2,
   })
   req2.Header.Set("Authorization", cred.String())
