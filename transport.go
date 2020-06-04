@@ -85,7 +85,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// don't modify the original request
 	first := req.Clone(req.Context())
-	first.Body = ioutil.NopCloser(bytes.NewReader(body))
+	if body != nil {
+		first.Body = ioutil.NopCloser(bytes.NewReader(body))
+	}
 	// try to authorize the request using a cached challenge
 	if err := t.authorize(first); err != nil {
 		return nil, err
@@ -103,7 +105,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// setup the second request
 	second := req.Clone(req.Context())
-	second.Body = ioutil.NopCloser(bytes.NewReader(body))
+	if body != nil {
+		second.Body = ioutil.NopCloser(bytes.NewReader(body))
+	}
 	// authorise a second request based on the new challenge
 	if err := t.authorize(second); err != nil {
 		return nil, err
