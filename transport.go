@@ -94,7 +94,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
-	if err != nil || res.StatusCode == http.StatusUnauthorized {
+	if err != nil || res.StatusCode != http.StatusUnauthorized {
 		return res, err
 	}
 	// close the first message body
