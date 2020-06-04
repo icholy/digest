@@ -50,6 +50,7 @@ func (t *Transport) authorize(req *http.Request) error {
 	host := req.URL.Hostname()
 	if cc, ok := t.domains[host]; ok {
 		cc.count++
+		// TODO: don't hold the lock while computing digest
 		cred, err := Digest(cc.chal, Options{
 			Method:   req.Method,
 			URI:      req.URL.RequestURI(),
