@@ -63,6 +63,8 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		h = sha256.New()
 	case "SHA-512":
 		h = sha512.New()
+	case "SHA-512-256":
+		h = sha512.New512_256()
 	default:
 		return nil, fmt.Errorf("digest: unsuported algorithm: %q", c.Algorithm)
 	}
