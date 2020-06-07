@@ -3,6 +3,7 @@ package digest
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -23,14 +24,30 @@ type Transport struct {
 	domains   map[string]*cached
 }
 
+// challenge returns the first value challenge in the repsonse
+func (t *Transport) challenge(res *http.Response) (*Challenge, error) {
+	values := res.Header.Values("WWW-Authenticate")
+	if len(values) == 0 {
+		return nil, errors.New("missing WWW-Authenticate header")
+	}
+	if len(values) == 1 {
+		return ParseChallenge(values[0])
+	}
+	var err error
+	var chal *Challenge
+	for _, header := range values {
+		chal, err = ParseChallenge(header)
+		if err == nil && CanDigest(chal) {
+			return chal, nil
+		}
+	}
+	return nil, fmt.Errorf("no supported WWW-Authenticate headers")
+}
+
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
-	header := res.Header.Get("WWW-Authenticate")
-	if header == "" {
-		return errors.New("missing WWW-Authenticate header")
-	}
-	chal, err := ParseChallenge(header)
+	chal, err := t.challenge(res)
 	if err != nil {
 		return err
 	}

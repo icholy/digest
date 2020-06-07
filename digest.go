@@ -32,13 +32,22 @@ type Options struct {
 	Cnonce string
 }
 
+// CanDigest checks if the algorithm and qop are supported
+func CanDigest(c *Challenge) bool {
+	switch c.Algorithm {
+	case "MD5", "SHA-256", "SHA-512":
+	default:
+		return false
+	}
+	if len(c.QOP) > 0 && !c.SupportsQOP("auth") {
+		return false
+	}
+	return true
+}
+
 // Digest creates credentials from a challenge and request options.
 // Note: if you want to re-use a challenge, you must increment the Count.
 func Digest(c *Challenge, o Options) (*Credentials, error) {
-	// we only support qop=auth and no qop
-	if len(c.QOP) != 0 && !c.SupportsQOP("auth") {
-		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
-	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
 	switch c.Algorithm {
@@ -57,9 +66,10 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 	// generate the response
 	var qop string
 	var response string
-	if len(c.QOP) == 0 {
+	switch {
+	case len(c.QOP) == 0:
 		response = hashf(h, "%s:%s:%s", a1, c.Nonce, a2)
-	} else {
+	case c.SupportsQOP("auth"):
 		qop = "auth"
 		if o.Cnonce == "" {
 			o.Cnonce = cnonce()
@@ -68,6 +78,8 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 			o.Count = 1
 		}
 		response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, c.Nonce, o.Count, o.Cnonce, qop, a2)
+	default:
+		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
 	}
 	return &Credentials{
 		Username:  o.Username,
