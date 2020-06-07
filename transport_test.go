@@ -61,12 +61,8 @@ func TestTransport(t *testing.T) {
 	assert.Equal(t, string(body), "Hello World")
 }
 
-var live = false
-
 func TestTransportHTTPBin(t *testing.T) {
-	if !live {
-		t.SkipNow()
-	}
+	t.SkipNow()
 	client := http.Client{
 		Transport: &Transport{
 			Username: "foo",
