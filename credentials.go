@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/icholy/digest/internal/param"
 )
@@ -20,6 +21,7 @@ type Credentials struct {
 	Opaque    string
 	QOP       string
 	Nc        int
+	Userhash  bool
 }
 
 // ParseCredentials parses the Authorization header value into credentials
@@ -59,6 +61,8 @@ func ParseCredentials(s string) (*Credentials, error) {
 				return nil, fmt.Errorf("digest: invalid nc: %w", err)
 			}
 			c.Nc = int(nc)
+		case "userhash":
+			c.Userhash = strings.ToLower(p.Value) == "true"
 		}
 	}
 	return &c, nil
@@ -125,6 +129,12 @@ func (c *Credentials) String() string {
 				Value: fmt.Sprintf("%08x", c.Nc),
 			},
 		)
+	}
+	if c.Userhash {
+		pp = append(pp, param.Param{
+			Key:   "userhash",
+			Value: "true",
+		})
 	}
 	return Prefix + param.Format(pp...)
 }
