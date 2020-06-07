@@ -65,6 +65,10 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 	// create the a1 & a2 values as described in the rfc
 	a1 := hashf(h, "%s:%s:%s", o.Username, c.Realm, o.Password)
 	a2 := hashf(h, "%s:%s", o.Method, o.URI)
+	// hash the username if requested
+	if c.Userhash {
+		o.Username = hashf(h, "%s:%s", o.Username, c.Realm)
+	}
 	// generate the response
 	var qop string
 	var response string
@@ -94,6 +98,7 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		Opaque:    c.Opaque,
 		QOP:       qop,
 		Nc:        o.Count,
+		Userhash:  c.Userhash,
 	}, nil
 }
 

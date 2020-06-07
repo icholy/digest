@@ -68,3 +68,37 @@ func TestDigestSHA256(t *testing.T) {
 		Nc:        1,
 	})
 }
+
+func TestDigestUserhash(t *testing.T) {
+	opt := Options{
+		Method:   "GET",
+		URI:      "/doe.json",
+		Username: "J\u00E4s\u00F8n Doe",
+		Password: "Secret, or not?",
+		Cnonce:   "NTg6RKcb9boFIAS3KrFK9BGeh+iDa/sm6jUMp2wds69v",
+	}
+	chal := &Challenge{
+		Realm:     "api@example.org",
+		Nonce:     "5TsQWLVdgBdmrQ0XsxbDODV+57QdFR34I9HAbC/RVvkK",
+		Algorithm: "SHA-512-256",
+		Opaque:    "HRPCssKJSGjCrkzDg8OhwpzCiGPChXYjwrI2QmXDnsOS",
+		QOP:       []string{"auth"},
+		Charset:   "UTF-8",
+		Userhash:  true,
+	}
+	cred, err := Digest(chal, opt)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, cred, &Credentials{
+		Username:  "793263caabb707a56211940d90411ea4a575adeccb7e360aeb624ed06ece9b0b",
+		Realm:     "api@example.org",
+		Nonce:     "5TsQWLVdgBdmrQ0XsxbDODV+57QdFR34I9HAbC/RVvkK",
+		URI:       "/doe.json",
+		Response:  "3798d4131c277846293534c3edc11bd8a5e4cdcbff78b05db9d95eeb1cec68a5",
+		Algorithm: "SHA-512-256",
+		Cnonce:    "NTg6RKcb9boFIAS3KrFK9BGeh+iDa/sm6jUMp2wds69v",
+		Opaque:    "HRPCssKJSGjCrkzDg8OhwpzCiGPChXYjwrI2QmXDnsOS",
+		QOP:       "auth",
+		Nc:        1,
+		Userhash:  true,
+	})
+}
