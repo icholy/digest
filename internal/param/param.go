@@ -76,7 +76,7 @@ func parseIdent(br *bufio.Reader) (string, error) {
 }
 
 func parseString(br *bufio.Reader) (string, error) {
-	var s []byte
+	var s []rune
 	// read the open quote
 	b, err := br.ReadByte()
 	if err != nil {
@@ -88,24 +88,24 @@ func parseString(br *bufio.Reader) (string, error) {
 	// read the string
 	var escaped bool
 	for {
-		b, err := br.ReadByte()
+		r, _, err := br.ReadRune()
 		if err != nil {
 			return "", err
 		}
 		if escaped {
-			s = append(s, b)
+			s = append(s, r)
 			escaped = false
 			continue
 		}
-		if b == '\\' {
+		if r == '\\' {
 			escaped = true
 			continue
 		}
 		// closing quote
-		if b == '"' {
+		if r == '"' {
 			break
 		}
-		s = append(s, b)
+		s = append(s, r)
 	}
 	return string(s), nil
 }
