@@ -38,7 +38,7 @@ func CanDigest(c *Challenge) bool {
 		return false
 	}
 	switch c.Algorithm {
-	case "MD5", "SHA-256", "SHA-512":
+	case "MD5", "SHA-256", "SHA-512", "SHA-512-256":
 	default:
 		return false
 	}
