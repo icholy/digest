@@ -78,6 +78,12 @@ func TestParam(t *testing.T) {
 				{Key: "foo", Value: `value " with quote`, Quote: true},
 			},
 		},
+		{
+			input: `key="Hello, 世界"`,
+			params: []Param{
+				{Key: "key", Value: "Hello, 世界", Quote: true},
+			},
+		},
 	}
 	for i, tt := range tests {
 		tt := tt
