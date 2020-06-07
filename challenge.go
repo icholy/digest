@@ -17,6 +17,7 @@ type Challenge struct {
 	Algorithm string
 	QOP       []string
 	Charset   string
+	Userhash  bool
 }
 
 // SupportsQOP returns true if the challenge advertises support
@@ -59,6 +60,8 @@ func ParseChallenge(s string) (*Challenge, error) {
 			c.QOP = strings.Split(p.Value, ",")
 		case "charset":
 			c.Charset = "UTF-8"
+		case "userhash":
+			c.Userhash = strings.ToLower(p.Value) == "true"
 		}
 	}
 	return &c, nil
@@ -114,6 +117,12 @@ func (c *Challenge) String() string {
 		pp = append(pp, param.Param{
 			Key:   "charset",
 			Value: c.Charset,
+		})
+	}
+	if c.Userhash {
+		pp = append(pp, param.Param{
+			Key:   "userhash",
+			Value: "true",
 		})
 	}
 	return Prefix + param.Format(pp...)

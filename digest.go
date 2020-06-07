@@ -34,6 +34,9 @@ type Options struct {
 
 // CanDigest checks if the algorithm and qop are supported
 func CanDigest(c *Challenge) bool {
+	if c.Userhash {
+		return false
+	}
 	switch c.Algorithm {
 	case "MD5", "SHA-256", "SHA-512":
 	default:
@@ -48,6 +51,9 @@ func CanDigest(c *Challenge) bool {
 // Digest creates credentials from a challenge and request options.
 // Note: if you want to re-use a challenge, you must increment the Count.
 func Digest(c *Challenge, o Options) (*Credentials, error) {
+	if c.Userhash {
+		return nil, fmt.Errorf("digest: userhash not supported")
+	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
 	switch c.Algorithm {
