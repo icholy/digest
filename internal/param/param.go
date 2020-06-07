@@ -38,14 +38,14 @@ func Format(pp ...Param) string {
 // Parse parses the header parameters
 func Parse(s string) ([]Param, error) {
 	var pp []Param
-	r := bufio.NewReader(strings.NewReader(s))
+	br := bufio.NewReader(strings.NewReader(s))
 	for i := 0; true; i++ {
 		// see if there's more to read
-		if _, err := r.Peek(1); err == io.EOF {
+		if _, err := br.Peek(1); err == io.EOF {
 			break
 		}
 		// read key/value pair
-		p, err := parseParam(r, i == 0)
+		p, err := parseParam(br, i == 0)
 		if err != nil {
 			return nil, fmt.Errorf("param: %w", err)
 		}
@@ -54,10 +54,10 @@ func Parse(s string) ([]Param, error) {
 	return pp, nil
 }
 
-func parseIdent(r *bufio.Reader) (string, error) {
+func parseIdent(br *bufio.Reader) (string, error) {
 	var ident []byte
 	for {
-		b, err := r.ReadByte()
+		b, err := br.ReadByte()
 		if err == io.EOF {
 			break
 		}
@@ -65,7 +65,7 @@ func parseIdent(r *bufio.Reader) (string, error) {
 			return "", err
 		}
 		if !(('a' <= b && b <= 'z') || ('A' <= b && b <= 'Z') || '0' <= b && b <= '9' || b == '-') {
-			if err := r.UnreadByte(); err != nil {
+			if err := br.UnreadByte(); err != nil {
 				return "", err
 			}
 			break
@@ -75,10 +75,10 @@ func parseIdent(r *bufio.Reader) (string, error) {
 	return string(ident), nil
 }
 
-func parseString(r *bufio.Reader) (string, error) {
+func parseString(br *bufio.Reader) (string, error) {
 	var s []byte
 	// read the open quote
-	b, err := r.ReadByte()
+	b, err := br.ReadByte()
 	if err != nil {
 		return "", err
 	}
@@ -88,7 +88,7 @@ func parseString(r *bufio.Reader) (string, error) {
 	// read the string
 	var escaped bool
 	for {
-		b, err := r.ReadByte()
+		b, err := br.ReadByte()
 		if err != nil {
 			return "", err
 		}
@@ -110,31 +110,31 @@ func parseString(r *bufio.Reader) (string, error) {
 	return string(s), nil
 }
 
-func skipComma(r *bufio.Reader) error {
+func skipComma(br *bufio.Reader) error {
 	for {
-		b, err := r.ReadByte()
+		b, err := br.ReadByte()
 		if err != nil {
 			return err
 		}
 		if b != ' ' && b != ',' {
-			return r.UnreadByte()
+			return br.UnreadByte()
 		}
 	}
 }
 
-func parseParam(r *bufio.Reader, first bool) (Param, error) {
+func parseParam(br *bufio.Reader, first bool) (Param, error) {
 	if !first {
-		if err := skipComma(r); err != nil {
+		if err := skipComma(br); err != nil {
 			return Param{}, err
 		}
 	}
 	// read the key
-	key, err := parseIdent(r)
+	key, err := parseIdent(br)
 	if err != nil {
 		return Param{}, err
 	}
 	// read the equals sign
-	eq, err := r.ReadByte()
+	eq, err := br.ReadByte()
 	if err != nil {
 		return Param{}, err
 	}
@@ -144,11 +144,11 @@ func parseParam(r *bufio.Reader, first bool) (Param, error) {
 	// read the value
 	var value string
 	var quote bool
-	if b, _ := r.Peek(1); len(b) == 1 && b[0] == '"' {
+	if b, _ := br.Peek(1); len(b) == 1 && b[0] == '"' {
 		quote = true
-		value, err = parseString(r)
+		value, err = parseString(br)
 	} else {
-		value, err = parseIdent(r)
+		value, err = parseIdent(br)
 	}
 	if err != nil {
 		return Param{}, err
