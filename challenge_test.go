@@ -1,6 +1,7 @@
 package digest
 
 import (
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -40,4 +41,32 @@ func TestChallenge(t *testing.T) {
 			assert.DeepEqual(t, c.String(), tt.input)
 		})
 	}
+}
+
+func TestFindChallenge(t *testing.T) {
+	bad1 := &Challenge{
+		Realm:     "test",
+		Nonce:     "kvjkdfjs",
+		Algorithm: "MD5-sess",
+		QOP:       []string{"auth"},
+	}
+	bad2 := &Challenge{
+		Realm:     "test",
+		Nonce:     "9jksdurjksdf",
+		Algorithm: "MD5",
+		QOP:       []string{"auth-int"},
+	}
+	good := &Challenge{
+		Realm:     "test",
+		Nonce:     "jgdfsijdfisd",
+		Algorithm: "MD5",
+		QOP:       []string{"auth"},
+	}
+	headers := http.Header{}
+	headers.Add("WWW-Authenticate", bad1.String())
+	headers.Add("WWW-Authenticate", bad2.String())
+	headers.Add("WWW-Authenticate", good.String())
+	chal, err := FindChallenge(headers)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, chal, good)
 }

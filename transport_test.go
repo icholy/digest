@@ -14,18 +14,6 @@ func TestTransport(t *testing.T) {
 	username := "foo"
 	password := "bar"
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		badchal1 := &Challenge{
-			Realm:     "test",
-			Nonce:     "jgdfsijdfisd",
-			Algorithm: "MD5-sess",
-			QOP:       []string{"auth"},
-		}
-		badchal2 := &Challenge{
-			Realm:     "test",
-			Nonce:     "jgdfsijdfisd",
-			Algorithm: "MD5",
-			QOP:       []string{"auth-int"},
-		}
 		chal := &Challenge{
 			Realm:     "test",
 			Nonce:     "jgdfsijdfisd",
@@ -53,8 +41,6 @@ func TestTransport(t *testing.T) {
 			authorized = cred.Response != cred2.Response
 		}
 		if !authorized {
-			w.Header().Add("WWW-Authenticate", badchal1.String())
-			w.Header().Add("WWW-Authenticate", badchal2.String())
 			w.Header().Add("WWW-Authenticate", chal.String())
 			w.WriteHeader(http.StatusUnauthorized)
 			return
