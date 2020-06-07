@@ -2,7 +2,6 @@ package digest
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -23,28 +22,10 @@ type Transport struct {
 	domains   map[string]*cached
 }
 
-// challenge returns the first supported challenge in the repsonse
-func (t *Transport) challenge(res *http.Response) (*Challenge, error) {
-	var last error
-	for _, header := range res.Header.Values("WWW-Authenticate") {
-		chal, err := ParseChallenge(header)
-		if err == nil && CanDigest(chal) {
-			return chal, nil
-		}
-		if err != nil {
-			last = err
-		}
-	}
-	if last != nil {
-		return nil, last
-	}
-	return nil, fmt.Errorf("no supported WWW-Authenticate headers")
-}
-
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
-	chal, err := t.challenge(res)
+	chal, err := ResponseChallenge(res)
 	if err != nil {
 		return err
 	}

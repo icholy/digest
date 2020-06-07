@@ -2,6 +2,8 @@ package digest
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/icholy/digest/internal/param"
@@ -126,4 +128,26 @@ func (c *Challenge) String() string {
 		})
 	}
 	return Prefix + param.Format(pp...)
+}
+
+// ResponseChallenge returns the first supported challenge from the provided
+// http response
+func ResponseChallenge(res *http.Response) (*Challenge, error) {
+	var last error
+	for _, header := range res.Header.Values("WWW-Authenticate") {
+		if !IsDigest(header) {
+			continue
+		}
+		chal, err := ParseChallenge(header)
+		if err == nil && CanDigest(chal) {
+			return chal, nil
+		}
+		if err != nil {
+			last = err
+		}
+	}
+	if last != nil {
+		return nil, last
+	}
+	return nil, fmt.Errorf("no supported WWW-Authenticate headers")
 }
