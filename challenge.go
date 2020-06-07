@@ -110,5 +110,11 @@ func (c *Challenge) String() string {
 			Quote: true,
 		})
 	}
+	if c.Charset != "" {
+		pp = append(pp, param.Param{
+			Key:   "charset",
+			Value: c.Charset,
+		})
+	}
 	return Prefix + param.Format(pp...)
 }
