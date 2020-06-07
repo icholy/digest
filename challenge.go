@@ -9,7 +9,7 @@ import (
 	"github.com/icholy/digest/internal/param"
 )
 
-// Challenge is a challange sent in the WWW-Authenticate header
+// Challenge is a challenge sent in the WWW-Authenticate header
 type Challenge struct {
 	Realm     string
 	Domain    []string

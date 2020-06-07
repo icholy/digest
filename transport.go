@@ -70,7 +70,7 @@ func (t *Transport) authorize(req *http.Request) error {
 }
 
 // RoundTrip will try to authorize the request using a cached challenge.
-// If that doesn't work and we recieve a 401, we'll try again using that challenge.
+// If that doesn't work and we receive a 401, we'll try again using that challenge.
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// use the configured transport if there is one
 	tr := t.Transport
