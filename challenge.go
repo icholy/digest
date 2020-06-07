@@ -130,11 +130,10 @@ func (c *Challenge) String() string {
 	return Prefix + param.Format(pp...)
 }
 
-// ResponseChallenge returns the first supported challenge from the provided
-// http response
-func ResponseChallenge(res *http.Response) (*Challenge, error) {
+// FindChallenge returns the first supported challenge in the headers
+func FindChallenge(h http.Header) (*Challenge, error) {
 	var last error
-	for _, header := range res.Header.Values("WWW-Authenticate") {
+	for _, header := range h.Values("WWW-Authenticate") {
 		if !IsDigest(header) {
 			continue
 		}

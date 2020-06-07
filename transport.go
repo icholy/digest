@@ -25,7 +25,7 @@ type Transport struct {
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
-	chal, err := ResponseChallenge(res)
+	chal, err := FindChallenge(res.Header)
 	if err != nil {
 		return err
 	}
