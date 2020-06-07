@@ -24,24 +24,30 @@ type Transport struct {
 	domains   map[string]*cached
 }
 
-// challenge returns the first value challenge in the repsonse
+// challenge returns the first supported challenge in the repsonse
 func (t *Transport) challenge(res *http.Response) (*Challenge, error) {
 	values := res.Header.Values("WWW-Authenticate")
-	if len(values) == 0 {
+	switch len(values) {
+	case 0:
 		return nil, errors.New("missing WWW-Authenticate header")
-	}
-	if len(values) == 1 {
+	case 1:
 		return ParseChallenge(values[0])
-	}
-	var err error
-	var chal *Challenge
-	for _, header := range values {
-		chal, err = ParseChallenge(header)
-		if err == nil && CanDigest(chal) {
-			return chal, nil
+	default:
+		var last error
+		for _, header := range values {
+			chal, err := ParseChallenge(header)
+			if err == nil && CanDigest(chal) {
+				return chal, nil
+			}
+			if err != nil {
+				last = err
+			}
 		}
+		if last != nil {
+			return nil, last
+		}
+		return nil, fmt.Errorf("no supported WWW-Authenticate headers")
 	}
-	return nil, fmt.Errorf("no supported WWW-Authenticate headers")
 }
 
 // save parses the digest challenge from the response
