@@ -73,7 +73,7 @@ func TestTransportHTTPBin(t *testing.T) {
 			Password: "bar",
 		},
 	}
-	res, err := client.Get("http://httpbin.org/digest-auth/auth/foo/bar")
+	res, err := client.Get("http://httpbin.org/digest-auth/auth/foo/bar/SHA-512")
 	assert.NilError(t, err)
 	assert.Assert(t, res.StatusCode == http.StatusOK)
 }

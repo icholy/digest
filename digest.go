@@ -3,8 +3,11 @@ package digest
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 	"strings"
 )
@@ -37,17 +40,25 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
 	}
 	// we only support md5
-	if c.Algorithm != "MD5" && c.Algorithm != "" {
+	var h hash.Hash
+	switch c.Algorithm {
+	case "MD5":
+		h = md5.New()
+	case "SHA-256":
+		h = sha256.New()
+	case "SHA-512":
+		h = sha512.New()
+	default:
 		return nil, fmt.Errorf("digest: unsuported algorithm: %q", c.Algorithm)
 	}
 	// create the a1 & a2 values as described in the rfc
-	a1 := hashf("%s:%s:%s", o.Username, c.Realm, o.Password)
-	a2 := hashf("%s:%s", o.Method, o.URI)
+	a1 := hashf(h, "%s:%s:%s", o.Username, c.Realm, o.Password)
+	a2 := hashf(h, "%s:%s", o.Method, o.URI)
 	// generate the response
 	var qop string
 	var response string
 	if len(c.QOP) == 0 {
-		response = hashf("%s:%s:%s", a1, c.Nonce, a2)
+		response = hashf(h, "%s:%s:%s", a1, c.Nonce, a2)
 	} else {
 		qop = "auth"
 		if o.Cnonce == "" {
@@ -56,7 +67,7 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		if o.Count == 0 {
 			o.Count = 1
 		}
-		response = hashf("%s:%s:%08x:%s:%s:%s", a1, c.Nonce, o.Count, o.Cnonce, qop, a2)
+		response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, c.Nonce, o.Count, o.Cnonce, qop, a2)
 	}
 	return &Credentials{
 		Username:  o.Username,
@@ -72,8 +83,8 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 	}, nil
 }
 
-func hashf(format string, args ...interface{}) string {
-	h := md5.New()
+func hashf(h hash.Hash, format string, args ...interface{}) string {
+	h.Reset()
 	fmt.Fprintf(h, format, args...)
 	return hex.EncodeToString(h.Sum(nil))
 }
