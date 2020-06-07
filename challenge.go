@@ -16,6 +16,7 @@ type Challenge struct {
 	Stale     bool
 	Algorithm string
 	QOP       []string
+	Charset   string
 }
 
 // SupportsQOP returns true if the challenge advertises support
@@ -56,6 +57,8 @@ func ParseChallenge(s string) (*Challenge, error) {
 			c.Opaque = p.Value
 		case "qop":
 			c.QOP = strings.Split(p.Value, ",")
+		case "charset":
+			c.Charset = "UTF-8"
 		}
 	}
 	return &c, nil
