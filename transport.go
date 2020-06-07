@@ -62,6 +62,9 @@ func (t *Transport) save(res *http.Response) error {
 	if t.domains == nil {
 		t.domains = map[string]*cached{}
 	}
+	// TODO: if the challenge contains a domain, we should be using that
+	//       to match against outgoing requests. We're currently ignoring
+	//       it and just matching the hostname.
 	t.domains[host] = &cached{chal: chal}
 	t.domainsMu.Unlock()
 	return nil
