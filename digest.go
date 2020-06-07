@@ -39,7 +39,7 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 	if len(c.QOP) != 0 && !c.SupportsQOP("auth") {
 		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
 	}
-	// we only support md5
+	// we re-use the same hash.Hash
 	var h hash.Hash
 	switch c.Algorithm {
 	case "MD5":
