@@ -10,17 +10,6 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func ExampleTransport() {
-	client := http.Client{
-		Transport: &Transport{
-			Username: "foo",
-			Password: "bar",
-		},
-	}
-	res, _ := client.Get("http://httpbin.org/digest-auth/auth/foo/bar/SHA-512")
-	println(res.Status)
-}
-
 func TestTransport(t *testing.T) {
 	username := "foo"
 	password := "bar"
