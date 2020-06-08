@@ -48,10 +48,15 @@ func CanDigest(c *Challenge) bool {
 // Digest creates credentials from a challenge and request options.
 // Note: if you want to re-use a challenge, you must increment the Count.
 func Digest(c *Challenge, o Options) (*Credentials, error) {
+	// algorithm defaults to MD5
+	algorithm := c.Algorithm
+	if algorithm == "" {
+		algorithm = "MD5"
+	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
-	switch c.Algorithm {
-	case "", "MD5":
+	switch algorithm {
+	case "MD5":
 		h = md5.New()
 	case "SHA-256":
 		h = sha256.New()
@@ -93,7 +98,7 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		Nonce:     c.Nonce,
 		URI:       o.URI,
 		Response:  response,
-		Algorithm: c.Algorithm,
+		Algorithm: algorithm,
 		Cnonce:    o.Cnonce,
 		Opaque:    c.Opaque,
 		QOP:       qop,
