@@ -61,15 +61,40 @@ func TestTransport(t *testing.T) {
 	assert.Equal(t, string(body), "Hello World")
 }
 
-func TestTransportHTTPBin(t *testing.T) {
+func TestTransportLive(t *testing.T) {
 	t.SkipNow()
-	client := http.Client{
-		Transport: &Transport{
-			Username: "foo",
-			Password: "bar",
+	tests := []struct {
+		name     string
+		url      string
+		username string
+		password string
+	}{
+		{
+			name:     "httpbin",
+			url:      "http://httpbin.org/digest-auth/auth/foo/bar/SHA-512",
+			username: "foo",
+			password: "bar",
+		},
+		{
+			name:     "postman",
+			url:      "https://postman-echo.com/digest-auth",
+			username: "postman",
+			password: "password",
 		},
 	}
-	res, err := client.Get("http://httpbin.org/digest-auth/auth/foo/bar/SHA-512")
-	assert.NilError(t, err)
-	assert.Assert(t, res.StatusCode == http.StatusOK)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := http.Client{
+				Transport: &Transport{
+					Username: tt.username,
+					Password: tt.password,
+				},
+			}
+			res, err := client.Get(tt.url)
+			assert.NilError(t, err)
+			defer res.Body.Close()
+			assert.Assert(t, res.StatusCode == http.StatusOK)
+			defer client.CloseIdleConnections()
+		})
+	}
 }
