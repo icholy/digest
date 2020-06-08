@@ -61,7 +61,7 @@ func ParseChallenge(s string) (*Challenge, error) {
 		case "qop":
 			c.QOP = strings.Split(p.Value, ",")
 		case "charset":
-			c.Charset = "UTF-8"
+			c.Charset = p.Value
 		case "userhash":
 			c.Userhash = strings.ToLower(p.Value) == "true"
 		}
