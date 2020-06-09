@@ -80,24 +80,14 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// we have to copy the body into memory in case we need
 	// to send a second request
-	getbody := req.GetBody
-	if getbody == nil && req.Body != nil {
-		body, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			return nil, err
-		}
-		getbody = func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(body)), nil
-		}
+	clone, err := cloner(req)
+	if err != nil {
+		return nil, err
 	}
 	// don't modify the original request
-	first := req.Clone(req.Context())
-	if getbody != nil {
-		body, err := getbody()
-		if err != nil {
-			return nil, err
-		}
-		first.Body = body
+	first, err := clone()
+	if err != nil {
+		return nil, err
 	}
 	// try to authorize the request using a cached challenge
 	if err := t.authorize(first); err != nil {
@@ -115,17 +105,40 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// setup the second request
-	second := req.Clone(req.Context())
-	if getbody != nil {
-		body, err := getbody()
-		if err != nil {
-			return nil, err
-		}
-		second.Body = body
+	second, err := clone()
+	if err != nil {
+		return nil, err
 	}
 	// authorise a second request based on the new challenge
 	if err := t.authorize(second); err != nil {
 		return nil, err
 	}
 	return tr.RoundTrip(second)
+}
+
+// cloner returns a function which makes clones of the provided request
+func cloner(req *http.Request) (func() (*http.Request, error), error) {
+	getbody := req.GetBody
+	if getbody == nil && req.Body != nil {
+		// if there's no GetBody function set we have to copy the body
+		// into memory to use for future clones
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		getbody = func() (io.ReadCloser, error) {
+			return ioutil.NopCloser(bytes.NewReader(body)), nil
+		}
+	}
+	return func() (*http.Request, error) {
+		clone := req.Clone(req.Context())
+		if getbody != nil {
+			body, err := getbody()
+			if err != nil {
+				return nil, err
+			}
+			clone.Body = body
+		}
+		return clone, nil
+	}, nil
 }
