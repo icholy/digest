@@ -2,6 +2,7 @@ package digest
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -79,19 +80,19 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// we have to copy the body into memory in case we need
 	// to send a second request
-	var body []byte
-	if req.Body != nil {
-		var err error
-		body, err = ioutil.ReadAll(req.Body)
+	getbody := req.GetBody
+	if getbody == nil && req.Body != nil {
+		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			return nil, err
+		}
+		getbody = func() (io.ReadCloser, error) {
+			return ioutil.NopCloser(bytes.NewReader(body)), nil
 		}
 	}
 	// don't modify the original request
 	first := req.Clone(req.Context())
-	if body != nil {
-		first.Body = ioutil.NopCloser(bytes.NewReader(body))
-	}
+	first.GetBody = getbody
 	// try to authorize the request using a cached challenge
 	if err := t.authorize(first); err != nil {
 		return nil, err
@@ -109,9 +110,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// setup the second request
 	second := req.Clone(req.Context())
-	if body != nil {
-		second.Body = ioutil.NopCloser(bytes.NewReader(body))
-	}
+	second.GetBody = getbody
 	// authorise a second request based on the new challenge
 	if err := t.authorize(second); err != nil {
 		return nil, err
