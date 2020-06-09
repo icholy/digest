@@ -83,8 +83,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	first, err := clone()
 	// setup the first request
+	first, err := clone()
 	if err != nil {
 		return nil, err
 	}
