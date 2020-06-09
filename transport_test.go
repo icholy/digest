@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -14,6 +15,10 @@ func TestTransport(t *testing.T) {
 	username := "foo"
 	password := "bar"
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		assert.NilError(t, err)
+		assert.Equal(t, string(body), "The Body")
+
 		chal := &Challenge{
 			Realm:     "test",
 			Nonce:     "jgdfsijdfisd",
@@ -54,7 +59,9 @@ func TestTransport(t *testing.T) {
 			Password: password,
 		},
 	}
-	res, err := client.Get(ts.URL)
+	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader("The Body"))
+	assert.NilError(t, err)
+	res, err := client.Do(req)
 	assert.NilError(t, err)
 	body, err := ioutil.ReadAll(res.Body)
 	assert.NilError(t, err)
