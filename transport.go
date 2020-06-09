@@ -19,8 +19,8 @@ type Transport struct {
 	Password  string
 	Transport http.RoundTripper
 
-	domainsMu sync.Mutex
-	domains   map[string]*cached
+	cacheMu sync.Mutex
+	cache   map[string]*cached
 }
 
 // save parses the digest challenge from the response
@@ -31,28 +31,28 @@ func (t *Transport) save(res *http.Response) error {
 		return err
 	}
 	host := res.Request.URL.Hostname()
-	t.domainsMu.Lock()
-	if t.domains == nil {
-		t.domains = map[string]*cached{}
+	t.cacheMu.Lock()
+	if t.cache == nil {
+		t.cache = map[string]*cached{}
 	}
 	// TODO: if the challenge contains a domain, we should be using that
 	//       to match against outgoing requests. We're currently ignoring
 	//       it and just matching the hostname.
-	t.domains[host] = &cached{chal: chal}
-	t.domainsMu.Unlock()
+	t.cache[host] = &cached{chal: chal}
+	t.cacheMu.Unlock()
 	return nil
 }
 
 // authorize attempts to find a cached challenge that matches the
 // requested domain, and use it to set the Authorization header
 func (t *Transport) authorize(req *http.Request) error {
-	t.domainsMu.Lock()
-	defer t.domainsMu.Unlock()
-	if t.domains == nil {
-		t.domains = map[string]*cached{}
+	t.cacheMu.Lock()
+	defer t.cacheMu.Unlock()
+	if t.cache == nil {
+		t.cache = map[string]*cached{}
 	}
 	host := req.URL.Hostname()
-	if cc, ok := t.domains[host]; ok {
+	if cc, ok := t.cache[host]; ok {
 		cc.count++
 		// TODO: don't hold the lock while computing digest
 		cred, err := Digest(cc.chal, Options{
