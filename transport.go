@@ -78,14 +78,13 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if tr == nil {
 		tr = http.DefaultTransport
 	}
-	// we have to copy the body into memory in case we need
-	// to send a second request
+	// don't modify the original request
 	clone, err := cloner(req)
 	if err != nil {
 		return nil, err
 	}
-	// don't modify the original request
 	first, err := clone()
+	// setup the first request
 	if err != nil {
 		return nil, err
 	}
