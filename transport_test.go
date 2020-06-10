@@ -78,6 +78,12 @@ func TestTransportLive(t *testing.T) {
 	}{
 		{
 			name:     "httpbin",
+			url:      "http://httpbin.org/digest-auth/auth/foo/bar",
+			username: "foo",
+			password: "bar",
+		},
+		{
+			name:     "httpbin",
 			url:      "http://httpbin.org/digest-auth/auth/foo/bar/SHA-512",
 			username: "foo",
 			password: "bar",
