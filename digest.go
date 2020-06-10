@@ -44,17 +44,17 @@ func CanDigest(c *Challenge) bool {
 
 // Digest creates credentials from a challenge and request options.
 // Note: if you want to re-use a challenge, you must increment the Count.
-func Digest(c *Challenge, o Options) (*Credentials, error) {
+func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	cred := &Credentials{
 		Username:  o.Username,
-		Realm:     c.Realm,
-		Nonce:     c.Nonce,
+		Realm:     chal.Realm,
+		Nonce:     chal.Nonce,
 		URI:       o.URI,
-		Algorithm: c.Algorithm,
+		Algorithm: chal.Algorithm,
 		Cnonce:    o.Cnonce,
-		Opaque:    c.Opaque,
+		Opaque:    chal.Opaque,
 		Nc:        o.Count,
-		Userhash:  c.Userhash,
+		Userhash:  chal.Userhash,
 	}
 	// algorithm defaults to MD5
 	if cred.Algorithm == "" {
@@ -75,17 +75,17 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		return nil, fmt.Errorf("digest: unsuported algorithm: %q", cred.Algorithm)
 	}
 	// create the a1 & a2 values as described in the rfc
-	a1 := hashf(h, "%s:%s:%s", o.Username, c.Realm, o.Password)
+	a1 := hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password)
 	a2 := hashf(h, "%s:%s", o.Method, o.URI)
 	// hash the username if requested
-	if c.Userhash {
-		cred.Username = hashf(h, "%s:%s", o.Username, c.Realm)
+	if cred.Userhash {
+		cred.Username = hashf(h, "%s:%s", o.Username, cred.Realm)
 	}
 	// generate the response
 	switch {
-	case len(c.QOP) == 0:
+	case len(chal.QOP) == 0:
 		cred.Response = hashf(h, "%s:%s:%s", a1, cred.Nonce, a2)
-	case c.SupportsQOP("auth"):
+	case chal.SupportsQOP("auth"):
 		cred.QOP = "auth"
 		if cred.Cnonce == "" {
 			cred.Cnonce = cnonce()
@@ -95,7 +95,7 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 		}
 		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, cred.Nonce, cred.Nc, cred.Cnonce, cred.QOP, a2)
 	default:
-		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
+		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(chal.QOP, ","))
 	}
 	return cred, nil
 }
