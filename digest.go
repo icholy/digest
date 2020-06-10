@@ -45,14 +45,24 @@ func CanDigest(c *Challenge) bool {
 // Digest creates credentials from a challenge and request options.
 // Note: if you want to re-use a challenge, you must increment the Count.
 func Digest(c *Challenge, o Options) (*Credentials, error) {
+	cred := &Credentials{
+		Username:  o.Username,
+		Realm:     c.Realm,
+		Nonce:     c.Nonce,
+		URI:       o.URI,
+		Algorithm: c.Algorithm,
+		Cnonce:    o.Cnonce,
+		Opaque:    c.Opaque,
+		Nc:        o.Count,
+		Userhash:  c.Userhash,
+	}
 	// algorithm defaults to MD5
-	algorithm := c.Algorithm
-	if algorithm == "" {
-		algorithm = "MD5"
+	if cred.Algorithm == "" {
+		cred.Algorithm = "MD5"
 	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
-	switch algorithm {
+	switch cred.Algorithm {
 	case "MD5":
 		h = md5.New()
 	case "SHA-256":
@@ -62,46 +72,32 @@ func Digest(c *Challenge, o Options) (*Credentials, error) {
 	case "SHA-512-256":
 		h = sha512.New512_256()
 	default:
-		return nil, fmt.Errorf("digest: unsuported algorithm: %q", c.Algorithm)
+		return nil, fmt.Errorf("digest: unsuported algorithm: %q", cred.Algorithm)
 	}
 	// create the a1 & a2 values as described in the rfc
 	a1 := hashf(h, "%s:%s:%s", o.Username, c.Realm, o.Password)
 	a2 := hashf(h, "%s:%s", o.Method, o.URI)
 	// hash the username if requested
 	if c.Userhash {
-		o.Username = hashf(h, "%s:%s", o.Username, c.Realm)
+		cred.Username = hashf(h, "%s:%s", o.Username, c.Realm)
 	}
 	// generate the response
-	var qop string
-	var response string
 	switch {
 	case len(c.QOP) == 0:
-		response = hashf(h, "%s:%s:%s", a1, c.Nonce, a2)
+		cred.Response = hashf(h, "%s:%s:%s", a1, cred.Nonce, a2)
 	case c.SupportsQOP("auth"):
-		qop = "auth"
-		if o.Cnonce == "" {
-			o.Cnonce = cnonce()
+		cred.QOP = "auth"
+		if cred.Cnonce == "" {
+			cred.Cnonce = cnonce()
 		}
-		if o.Count == 0 {
-			o.Count = 1
+		if cred.Nc == 0 {
+			cred.Nc = 1
 		}
-		response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, c.Nonce, o.Count, o.Cnonce, qop, a2)
+		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, cred.Nonce, cred.Nc, cred.Cnonce, cred.QOP, a2)
 	default:
 		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(c.QOP, ","))
 	}
-	return &Credentials{
-		Username:  o.Username,
-		Realm:     c.Realm,
-		Nonce:     c.Nonce,
-		URI:       o.URI,
-		Response:  response,
-		Algorithm: algorithm,
-		Cnonce:    o.Cnonce,
-		Opaque:    c.Opaque,
-		QOP:       qop,
-		Nc:        o.Count,
-		Userhash:  c.Userhash,
-	}, nil
+	return cred, nil
 }
 
 func hashf(h hash.Hash, format string, args ...interface{}) string {
