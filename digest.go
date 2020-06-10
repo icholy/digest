@@ -47,13 +47,13 @@ func CanDigest(c *Challenge) bool {
 func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	cred := &Credentials{
 		Username:  o.Username,
+		URI:       o.URI,
+		Cnonce:    o.Cnonce,
+		Nc:        o.Count,
 		Realm:     chal.Realm,
 		Nonce:     chal.Nonce,
-		URI:       o.URI,
 		Algorithm: chal.Algorithm,
-		Cnonce:    o.Cnonce,
 		Opaque:    chal.Opaque,
-		Nc:        o.Count,
 		Userhash:  chal.Userhash,
 	}
 	// algorithm defaults to MD5
