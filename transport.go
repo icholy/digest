@@ -15,9 +15,10 @@ type cached struct {
 
 // Transport implements http.RoundTripper
 type Transport struct {
-	Username  string
-	Password  string
-	Transport http.RoundTripper
+	Username      string
+	Password      string
+	Transport     http.RoundTripper
+	FindChallenge func(http.Header) (*Challenge, error)
 
 	cacheMu sync.Mutex
 	cache   map[string]*cached
@@ -26,7 +27,11 @@ type Transport struct {
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
-	chal, err := FindChallenge(res.Header)
+	find := t.FindChallenge
+	if find == nil {
+		find = FindChallenge
+	}
+	chal, err := find(res.Header)
 	if err != nil {
 		return err
 	}

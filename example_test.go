@@ -24,8 +24,8 @@ func ExampleDigest() {
 	// Create digest credentials from the request challenge
 	chal, _ := digest.FindChallenge(res.Header)
 	cred, _ := digest.Digest(chal, digest.Options{
-		Method: req.Method,
-		URI: req.URL.RequestURI(),
+		Method:   req.Method,
+		URI:      req.URL.RequestURI(),
 		Username: "foo",
 		Password: "bar",
 	})
