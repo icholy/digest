@@ -113,7 +113,7 @@ func (c *Credentials) String() string {
 	}
 	if c.Opaque != "" {
 		pp = append(pp, param.Param{
-			Key:   "opque",
+			Key:   "opaque",
 			Value: c.Opaque,
 			Quote: true,
 		})

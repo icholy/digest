@@ -26,6 +26,21 @@ func TestCredentials(t *testing.T) {
 				Nc:        3,
 			},
 		},
+		{
+			input: `Digest username="icholy", realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa", uri="/restapi/relay/outlets/=0,1,2/state/", response="9e0d2169b41cbb504a58995e08b10eb1", algorithm=MD5, cnonce="MzI1MWE0MDI1MzEyOWQ2M2U1YjM1OGZiNWMwZWNiYjA=", opaque="wRtIEgb/X9z7XXAT", qop=auth, nc=00000001`,
+			credentials: &Credentials{
+				Username:  "icholy",
+				Realm:     "DLI LPC92601002528",
+				Nonce:     "NZAeQHhoCNifFjFa",
+				URI:       "/restapi/relay/outlets/=0,1,2/state/",
+				Response:  "9e0d2169b41cbb504a58995e08b10eb1",
+				Algorithm: "MD5",
+				Cnonce:    "MzI1MWE0MDI1MzEyOWQ2M2U1YjM1OGZiNWMwZWNiYjA=",
+				Opaque:    "wRtIEgb/X9z7XXAT",
+				QOP:       "auth",
+				Nc:        1,
+			},
+		},
 	}
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
