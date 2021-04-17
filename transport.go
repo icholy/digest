@@ -102,8 +102,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil || res.StatusCode != http.StatusUnauthorized {
 		return res, err
 	}
-	// close the first message body
-	res.Body.Close()
+	// drain and close the first message body
+	_, _ = io.Copy(io.Discard, res.Body)
+	_ = res.Body.Close()
 	// save the challenge for future use
 	if err := t.save(res); err != nil {
 		return nil, err
