@@ -28,6 +28,11 @@ type Transport struct {
 // save parses the digest challenge from the response
 // and adds it to the cache
 func (t *Transport) save(res *http.Response) error {
+	// save cookies
+	if t.Jar != nil {
+		t.Jar.SetCookies(res.Request.URL, res.Cookies())
+	}
+	// find and save digest challenge
 	find := t.FindChallenge
 	if find == nil {
 		find = FindChallenge
@@ -49,9 +54,16 @@ func (t *Transport) save(res *http.Response) error {
 	return nil
 }
 
-// authorize attempts to find a cached challenge that matches the
+// prepare attempts to find a cached challenge that matches the
 // requested domain, and use it to set the Authorization header
-func (t *Transport) authorize(req *http.Request) error {
+func (t *Transport) prepare(req *http.Request) error {
+	// add cookies
+	if t.Jar != nil {
+		for _, cookie := range t.Jar.Cookies(req.URL) {
+			req.AddCookie(cookie)
+		}
+	}
+	// add auth
 	t.cacheMu.Lock()
 	defer t.cacheMu.Unlock()
 	if t.cache == nil {
@@ -89,29 +101,19 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	// setup the first request
+	// make a copy of the request
 	first, err := clone()
 	if err != nil {
 		return nil, err
 	}
-	// try to authorize the request using a cached challenge
-	if err := t.authorize(first); err != nil {
+	// prepare the first request using a cached challenge
+	if err := t.prepare(first); err != nil {
 		return nil, err
-	}
-	// add cookies to first request
-	if t.Jar != nil {
-		for _, cookie := range t.Jar.Cookies(first.URL) {
-			first.AddCookie(cookie)
-		}
 	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
 	if err != nil || res.StatusCode != http.StatusUnauthorized {
 		return res, err
-	}
-	// save cookies from first request
-	if t.Jar != nil {
-		t.Jar.SetCookies(first.URL, res.Cookies())
 	}
 	// drain and close the first message body
 	_, _ = io.Copy(io.Discard, res.Body)
@@ -120,19 +122,13 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := t.save(res); err != nil {
 		return nil, err
 	}
-	// setup the second request
+	// make a second copy of the request
 	second, err := clone()
 	if err != nil {
 		return nil, err
 	}
-	// add cookies to second request
-	if t.Jar != nil {
-		for _, cookie := range t.Jar.Cookies(second.URL) {
-			second.AddCookie(cookie)
-		}
-	}
-	// authorise a second request based on the new challenge
-	if err := t.authorize(second); err != nil {
+	// prepare the second request based on the new challenge
+	if err := t.prepare(second); err != nil {
 		return nil, err
 	}
 	return tr.RoundTrip(second)
