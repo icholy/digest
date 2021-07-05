@@ -19,6 +19,7 @@ type Transport struct {
 	Password      string
 	Transport     http.RoundTripper
 	FindChallenge func(http.Header) (*Challenge, error)
+	Jar           http.CookieJar
 
 	cacheMu sync.Mutex
 	cache   map[string]*cached
@@ -97,10 +98,20 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := t.authorize(first); err != nil {
 		return nil, err
 	}
+	// add cookies to first request
+	if t.Jar != nil {
+		for _, cookie := range t.Jar.Cookies(first.URL) {
+			first.AddCookie(cookie)
+		}
+	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
 	if err != nil || res.StatusCode != http.StatusUnauthorized {
 		return res, err
+	}
+	// save cookies from first request
+	if t.Jar != nil {
+		t.Jar.SetCookies(first.URL, res.Cookies())
 	}
 	// drain and close the first message body
 	_, _ = io.Copy(io.Discard, res.Body)
@@ -113,6 +124,12 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	second, err := clone()
 	if err != nil {
 		return nil, err
+	}
+	// add cookies to second request
+	if t.Jar != nil {
+		for _, cookie := range t.Jar.Cookies(second.URL) {
+			second.AddCookie(cookie)
+		}
 	}
 	// authorise a second request based on the new challenge
 	if err := t.authorize(second); err != nil {
