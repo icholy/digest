@@ -28,6 +28,8 @@ func main() {
 }
 ```
 
+* **Note**: if you're using an `http.CookieJar` the `digest.Transport` needs a copy of it too.
+
 ## Low Level API
 
 ``` go
