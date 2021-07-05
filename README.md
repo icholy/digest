@@ -8,27 +8,87 @@
 package main
 
 import (
-  "net/http"
+	"net/http"
 
-  "github.com/icholy/digest"
+	"github.com/icholy/digest"
 )
 
 func main() {
-  client := &http.Client{
-    Transport: &digest.Transport{
-      Username: "foo",
-      Password: "bar",
-    },
-  }
-  res, err := client.Get("http://localhost:8080/some_outdated_service")
-  if err != nil {
-    panic(err)
-  }
-  defer res.Body.Close()
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Username: "foo",
+			Password: "bar",
+		},
+	}
+	res, err := client.Get("http://localhost:8080/some_outdated_service")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
 }
 ```
 
-* **Note**: if you're using an `http.CookieJar` the `digest.Transport` needs a copy of it too.
+## Using Cookies
+
+If you're using an `http.CookieJar` the `digest.Transport` needs a reference to it.
+
+``` go
+package main
+
+import (
+	"net/http"
+	"net/http/cookiejar"
+
+	"github.com/icholy/digest"
+)
+
+func main() {
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Jar: jar,
+		Transport: &digest.Transport{
+			Jar:      jar,
+			Username: "foo",
+			Password: "bar",
+		},
+	}
+	res, err := client.Get("http://localhost:8080/digest_with_cookies")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+}
+```
+
+## Custom Authenticate Header
+
+``` go
+package main
+
+import (
+	"net/http"
+
+	"github.com/icholy/digest"
+)
+
+func main() {
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Username: "foo",
+			Password: "bar",
+			FindChallenge: func(h http.Header) (*digest.Challenge, error) {
+				value := h.Get("Custom-Authenticate-Header")
+				return digest.ParseChallenge(value)
+			},
+		},
+	}
+	res, err := client.Get("http://localhost:8080/non_compliant")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+}
+```
 
 ## Low Level API
 
