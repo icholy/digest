@@ -56,14 +56,10 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 		Opaque:    chal.Opaque,
 		Userhash:  chal.Userhash,
 	}
-	// algorithm defaults to MD5
-	if cred.Algorithm == "" {
-		cred.Algorithm = "MD5"
-	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
 	switch cred.Algorithm {
-	case "MD5":
+	case "", "MD5":
 		h = md5.New()
 	case "SHA-256":
 		h = sha256.New()
