@@ -45,7 +45,6 @@ import (
 func main() {
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{
-		Jar: jar,
 		Transport: &digest.Transport{
 			Jar:      jar,
 			Username: "foo",
