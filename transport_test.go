@@ -2,7 +2,6 @@ package digest
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +14,7 @@ func TestTransport(t *testing.T) {
 	username := "foo"
 	password := "bar"
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		assert.NilError(t, err)
 		assert.Equal(t, string(body), "The Body")
 
@@ -63,7 +62,7 @@ func TestTransport(t *testing.T) {
 	assert.NilError(t, err)
 	res, err := client.Do(req)
 	assert.NilError(t, err)
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	assert.NilError(t, err)
 	assert.Equal(t, string(body), "Hello World")
 }

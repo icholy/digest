@@ -3,7 +3,6 @@ package digest
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -140,12 +139,12 @@ func cloner(req *http.Request) (func() (*http.Request, error), error) {
 	if getbody == nil && req.Body != nil {
 		// if there's no GetBody function set we have to copy the body
 		// into memory to use for future clones
-		body, err := ioutil.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 		if err != nil {
 			return nil, err
 		}
 		getbody = func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(body)), nil
+			return io.NopCloser(bytes.NewReader(body)), nil
 		}
 	}
 	return func() (*http.Request, error) {
