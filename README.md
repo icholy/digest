@@ -89,6 +89,45 @@ func main() {
 }
 ```
 
+## Override Digest Options
+
+``` go
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/icholy/digest"
+)
+
+func main() {
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Digest: func(req *http.Request, chal *digest.Challenge, opt digest.Options) (*digest.Credentials, error) {
+				switch req.URL.Hostname() {
+				case "badauth.org":
+					opt.Username = "foo"
+					opt.Password = "bar"
+				case "poorsecurity.com":
+					opt.Username = "zoo"
+					opt.Username = "boo"
+				default:
+					return fmt.Errorf("unsuported host: %q", req.URL)
+				}
+				return digest.Digest(chal, opt)
+			},
+		},
+	}
+	res, err := client.Get("http://localhost:8080/non_compliant")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+}
+```
+
+
 ## Low Level API
 
 ``` go
