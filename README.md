@@ -111,7 +111,7 @@ func main() {
 					opt.Password = "bar"
 				case "poorsecurity.com":
 					opt.Username = "zoo"
-					opt.Username = "boo"
+					opt.Password = "boo"
 				default:
 					return fmt.Errorf("unsuported host: %q", req.URL)
 				}
@@ -119,7 +119,7 @@ func main() {
 			},
 		},
 	}
-	res, err := client.Get("http://localhost:8080/non_compliant")
+	res, err := client.Get("http://poorsecurity.com/legacy.php")
 	if err != nil {
 		panic(err)
 	}
