@@ -17,6 +17,7 @@ type Transport struct {
 	Username      string
 	Password      string
 	Transport     http.RoundTripper
+	Digest        func(*http.Request, *Challenge, Options) (*Credentials, error)
 	FindChallenge func(http.Header) (*Challenge, error)
 	Jar           http.CookieJar
 
@@ -53,6 +54,21 @@ func (t *Transport) save(res *http.Response) error {
 	return nil
 }
 
+// digest creates credentials from the cached challenge
+func (t *Transport) digest(req *http.Request, cc *cached) (*Credentials, error) {
+	opt := Options{
+		Method:   req.Method,
+		URI:      req.URL.RequestURI(),
+		Count:    cc.count,
+		Username: t.Username,
+		Password: t.Password,
+	}
+	if t.Digest != nil {
+		return t.Digest(req, cc.chal, opt)
+	}
+	return Digest(cc.chal, opt)
+}
+
 // prepare attempts to find a cached challenge that matches the
 // requested domain, and use it to set the Authorization header
 func (t *Transport) prepare(req *http.Request) error {
@@ -72,13 +88,7 @@ func (t *Transport) prepare(req *http.Request) error {
 	if cc, ok := t.cache[host]; ok {
 		cc.count++
 		// TODO: don't hold the lock while computing digest
-		cred, err := Digest(cc.chal, Options{
-			Method:   req.Method,
-			URI:      req.URL.RequestURI(),
-			Count:    cc.count,
-			Username: t.Username,
-			Password: t.Password,
-		})
+		cred, err := t.digest(req, cc)
 		if err != nil {
 			return err
 		}
