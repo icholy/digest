@@ -19,6 +19,7 @@ type Transport struct {
 	Transport     http.RoundTripper
 	FindChallenge func(http.Header) (*Challenge, error)
 	Jar           http.CookieJar
+	NextCount     func(string) (int, error)
 
 	cacheMu sync.Mutex
 	cache   map[string]*cached
@@ -70,12 +71,24 @@ func (t *Transport) prepare(req *http.Request) error {
 	}
 	host := req.URL.Hostname()
 	if cc, ok := t.cache[host]; ok {
-		cc.count++
+
+		incr := t.NextCount
+		if incr == nil {
+			incr = func(_ string) (int, error) {
+				return cc.NextCount()
+			}
+		}
+
+		count, err := incr(host)
+		if err != nil {
+			return err
+		}
+
 		// TODO: don't hold the lock while computing digest
 		cred, err := Digest(cc.chal, Options{
 			Method:   req.Method,
 			URI:      req.URL.RequestURI(),
-			Count:    cc.count,
+			Count:    count,
 			Username: t.Username,
 			Password: t.Password,
 		})
@@ -158,4 +171,9 @@ func cloner(req *http.Request) (func() (*http.Request, error), error) {
 		}
 		return clone, nil
 	}, nil
+}
+
+func (c *cached) NextCount() (int, error) {
+	c.count++
+	return c.count, nil
 }

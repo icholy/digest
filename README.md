@@ -118,3 +118,46 @@ func main() {
   req2.Header.Set("Authorization", cred.String())
 }
 ```
+
+## Custom Nonce Counter
+
+If the service does not provide unique nonces for multiple clients and you must not duplicate nonce counts.
+
+``` go
+package main
+
+import (
+	"context"
+	"net/http"
+	"os"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/icholy/digest"
+)
+
+func main() {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_URL"),
+	})
+	defer redisClient.Close()
+
+	ctx := context.TODO()
+
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Username: "foo",
+			Password: "bar",
+			NextCount: func(s string) (int, error) {
+				result, err := redisClient.Incr(ctx, s).Result()
+				return int(result), err
+			},
+		},
+	}
+
+	res, err := client.Get("http://localhost:8080/some_outdated_service")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+}
+```
