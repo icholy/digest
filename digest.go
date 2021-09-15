@@ -39,7 +39,7 @@ func CanDigest(c *Challenge) bool {
 	default:
 		return false
 	}
-	return len(c.QOP) == 0 || c.SupportsQOP("auth")
+	return c.SupportsQOP("auth")
 }
 
 // Digest creates credentials from a challenge and request options.

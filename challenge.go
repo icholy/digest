@@ -30,7 +30,7 @@ func (c *Challenge) SupportsQOP(qop string) bool {
 			return true
 		}
 	}
-	return false
+	return len(c.QOP) == 0 && qop == "auth"
 }
 
 // ParseChallenge parses the WWW-Authenticate header challenge
