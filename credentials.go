@@ -29,8 +29,7 @@ func ParseCredentials(s string) (*Credentials, error) {
 	if !IsDigest(s) {
 		return nil, errors.New("digest: invalid credentials prefix")
 	}
-	s = s[len(Prefix):]
-	pp, err := param.Parse(s)
+	pp, err := param.Parse(s[len(Prefix):])
 	if err != nil {
 		return nil, err
 	}
