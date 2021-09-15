@@ -55,18 +55,34 @@ func (t *Transport) save(res *http.Response) error {
 }
 
 // digest creates credentials from the cached challenge
-func (t *Transport) digest(req *http.Request, cc *cached) (*Credentials, error) {
+func (t *Transport) digest(req *http.Request, chal *Challenge, count int) (*Credentials, error) {
 	opt := Options{
 		Method:   req.Method,
 		URI:      req.URL.RequestURI(),
-		Count:    cc.count,
+		Count:    count,
 		Username: t.Username,
 		Password: t.Password,
 	}
 	if t.Digest != nil {
-		return t.Digest(req, cc.chal, opt)
+		return t.Digest(req, chal, opt)
 	}
-	return Digest(cc.chal, opt)
+	return Digest(chal, opt)
+}
+
+// challenge returns a cached challenge and count for the provided request
+func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
+	t.cacheMu.Lock()
+	defer t.cacheMu.Unlock()
+	if t.cache == nil {
+		return nil, 0, false
+	}
+	host := req.URL.Hostname()
+	cc, ok := t.cache[host]
+	if !ok {
+		return nil, 0, false
+	}
+	cc.count++
+	return cc.chal, cc.count, true
 }
 
 // prepare attempts to find a cached challenge that matches the
@@ -79,21 +95,15 @@ func (t *Transport) prepare(req *http.Request) error {
 		}
 	}
 	// add auth
-	t.cacheMu.Lock()
-	defer t.cacheMu.Unlock()
-	if t.cache == nil {
-		t.cache = map[string]*cached{}
+	chal, count, ok := t.challenge(req)
+	if !ok {
+		return nil
 	}
-	host := req.URL.Hostname()
-	if cc, ok := t.cache[host]; ok {
-		cc.count++
-		// TODO: don't hold the lock while computing digest
-		cred, err := t.digest(req, cc)
-		if err != nil {
-			return err
-		}
-		req.Header.Set("Authorization", cred.String())
+	cred, err := t.digest(req, chal, count)
+	if err != nil {
+		return err
 	}
+	req.Header.Set("Authorization", cred.String())
 	return nil
 }
 
