@@ -113,7 +113,7 @@ func main() {
 					opt.Username = "zoo"
 					opt.Password = "boo"
 				default:
-					return fmt.Errorf("unsuported host: %q", req.URL)
+					return nil, fmt.Errorf("unsuported host: %q", req.URL)
 				}
 				return digest.Digest(chal, opt)
 			},
