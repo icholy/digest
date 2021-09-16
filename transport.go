@@ -73,9 +73,6 @@ func (t *Transport) digest(req *http.Request, chal *Challenge, count int) (*Cred
 func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
 	t.cacheMu.Lock()
 	defer t.cacheMu.Unlock()
-	if t.cache == nil {
-		return nil, 0, false
-	}
 	host := req.URL.Hostname()
 	cc, ok := t.cache[host]
 	if !ok {
