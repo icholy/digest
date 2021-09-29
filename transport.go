@@ -100,11 +100,9 @@ func (t *Transport) prepare(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	
 	if cred != nil {
 		req.Header.Set("Authorization", cred.String())
 	}
-	
 	return nil
 }
 
