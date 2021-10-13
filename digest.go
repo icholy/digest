@@ -68,7 +68,7 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	case "SHA-512-256":
 		h = sha512.New512_256()
 	default:
-		return nil, fmt.Errorf("digest: unsuported algorithm: %q", cred.Algorithm)
+		return nil, fmt.Errorf("digest: unsupported algorithm: %q", cred.Algorithm)
 	}
 	// create the a1 & a2 values as described in the rfc
 	a1 := hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password)
@@ -91,7 +91,7 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 		}
 		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, cred.Nonce, cred.Nc, cred.Cnonce, cred.QOP, a2)
 	default:
-		return nil, fmt.Errorf("digest: unsuported qop: %q", strings.Join(chal.QOP, ","))
+		return nil, fmt.Errorf("digest: unsupported qop: %q", strings.Join(chal.QOP, ","))
 	}
 	return cred, nil
 }
