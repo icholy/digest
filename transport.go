@@ -14,12 +14,32 @@ type cached struct {
 
 // Transport implements http.RoundTripper
 type Transport struct {
-	Username      string
-	Password      string
-	Transport     http.RoundTripper
-	Digest        func(*http.Request, *Challenge, Options) (*Credentials, error)
+	Username string
+	Password string
+
+	// Digest computes the digest credentials.
+	// If nil, the Digest function is used.
+	Digest func(*http.Request, *Challenge, Options) (*Credentials, error)
+
+	// FindChallenge extracts the challenge from the request headers.
+	// If nil, the FindChallenge function is used.
 	FindChallenge func(http.Header) (*Challenge, error)
-	Jar           http.CookieJar
+
+	// Transport specifies the mechanism by which individual
+	// HTTP requests are made.
+	// If nil, DefaultTransport is used.
+	Transport http.RoundTripper
+
+	// Jar specifies the cookie jar.
+	//
+	// The Jar is used to insert relevant cookies into every
+	// outbound Request and is updated with the cookie values
+	// of every inbound Response. The Jar is consulted for every
+	// redirect that the Client follows.
+	//
+	// If Jar is nil, cookies are only sent if they are explicitly
+	// set on the Request.
+	Jar http.CookieJar
 
 	cacheMu sync.Mutex
 	cache   map[string]*cached
