@@ -1,6 +1,7 @@
 package digest
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"testing"
@@ -69,4 +70,11 @@ func TestFindChallenge(t *testing.T) {
 	chal, err := FindChallenge(headers)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, chal, good)
+}
+
+func TestFindChallenge_NotFound(t *testing.T) {
+	_, err := FindChallenge(http.Header{})
+	if !errors.Is(err, ErrNoChallenge) {
+		t.Fatalf("not an expected error: %s, expected ErrNoChallenge", err.Error())
+	}
 }

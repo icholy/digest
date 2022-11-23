@@ -57,12 +57,16 @@ func (t *Transport) save(res *http.Response) error {
 	if find == nil {
 		find = FindChallenge
 	}
+	host := res.Request.URL.Hostname()
 	chal, err := find(res.Header)
+	t.cacheMu.Lock()
 	if err != nil {
+		if t.cache != nil {
+			delete(t.cache, host)
+		}
+		t.cacheMu.Unlock()
 		return err
 	}
-	host := res.Request.URL.Hostname()
-	t.cacheMu.Lock()
 	if t.cache == nil {
 		t.cache = map[string]*cached{}
 	}
@@ -194,6 +198,7 @@ func cloner(req *http.Request) (func() (*http.Request, error), error) {
 				return nil, err
 			}
 			clone.Body = body
+			clone.GetBody = getbody
 		}
 		return clone, nil
 	}, nil

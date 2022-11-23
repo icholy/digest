@@ -2,7 +2,6 @@ package digest
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -130,6 +129,9 @@ func (c *Challenge) String() string {
 	return Prefix + param.Format(pp...)
 }
 
+// ErrNoChallenge indicates that no WWW-Authenticate headers were found.
+var ErrNoChallenge = errors.New("no challenge found")
+
 // FindChallenge returns the first supported challenge in the headers
 func FindChallenge(h http.Header) (*Challenge, error) {
 	var last error
@@ -148,5 +150,5 @@ func FindChallenge(h http.Header) (*Challenge, error) {
 	if last != nil {
 		return nil, last
 	}
-	return nil, fmt.Errorf("no supported WWW-Authenticate headers")
+	return nil, ErrNoChallenge
 }
