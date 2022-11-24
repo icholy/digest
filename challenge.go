@@ -129,7 +129,7 @@ func (c *Challenge) String() string {
 }
 
 // ErrNoChallenge indicates that no WWW-Authenticate headers were found.
-var ErrNoChallenge = errors.New("no challenge found")
+var ErrNoChallenge = errors.New("digest: no challenge found")
 
 // FindChallenge returns the first supported challenge in the headers
 func FindChallenge(h http.Header) (*Challenge, error) {
