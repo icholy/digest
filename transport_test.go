@@ -68,7 +68,6 @@ func TestTransport(t *testing.T) {
 }
 
 func TestTransportLive(t *testing.T) {
-	t.SkipNow()
 	tests := []struct {
 		name     string
 		url      string
