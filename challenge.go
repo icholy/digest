@@ -37,8 +37,7 @@ func ParseChallenge(s string) (*Challenge, error) {
 	if !IsDigest(s) {
 		return nil, errors.New("digest: invalid challenge prefix")
 	}
-	s = s[len(Prefix):]
-	pp, err := param.Parse(s)
+	pp, err := param.Parse(s[len(Prefix):])
 	if err != nil {
 		return nil, err
 	}
