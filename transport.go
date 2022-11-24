@@ -7,9 +7,10 @@ import (
 	"sync"
 )
 
-type cached struct {
-	chal  *Challenge
-	count int
+// cchal is a cached challenge and the number of times it's been used.
+type cchal struct {
+	c *Challenge
+	n int
 }
 
 // Transport implements http.RoundTripper
@@ -41,8 +42,9 @@ type Transport struct {
 	// set on the Request.
 	Jar http.CookieJar
 
+	// cache of challenges indexed by host
+	cache   map[string]*cchal
 	cacheMu sync.Mutex
-	cache   map[string]*cached
 }
 
 // save parses the digest challenge from the response
@@ -68,12 +70,12 @@ func (t *Transport) save(res *http.Response) error {
 		return err
 	}
 	if t.cache == nil {
-		t.cache = map[string]*cached{}
+		t.cache = map[string]*cchal{}
 	}
 	// TODO: if the challenge contains a domain, we should be using that
 	//       to match against outgoing requests. We're currently ignoring
 	//       it and just matching the hostname.
-	t.cache[host] = &cached{chal: chal}
+	t.cache[host] = &cchal{c: chal}
 	t.cacheMu.Unlock()
 	return nil
 }
@@ -102,8 +104,8 @@ func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
 	if !ok {
 		return nil, 0, false
 	}
-	cc.count++
-	return cc.chal, cc.count, true
+	cc.n++
+	return cc.c, cc.n, true
 }
 
 // prepare attempts to find a cached challenge that matches the
