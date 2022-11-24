@@ -1,6 +1,8 @@
 package digest
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -108,4 +110,41 @@ func TestTransportLive(t *testing.T) {
 			defer client.CloseIdleConnections()
 		})
 	}
+}
+
+func TestTransportNoChallenge(t *testing.T) {
+	var expired bool
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if auth := r.Header.Get("Authorization"); auth != "" {
+			if expired {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			} else {
+				fmt.Fprintf(w, "Success")
+				expired = true
+			}
+			return
+		}
+		chal := &Challenge{
+			Realm:     "test",
+			Nonce:     "jgdfsijdfisd",
+			Algorithm: "MD5",
+			QOP:       []string{"auth"},
+		}
+		w.Header().Add("WWW-Authenticate", chal.String())
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	}))
+	defer ts.Close()
+	client := http.Client{
+		Transport: &Transport{
+			Username: "test",
+			Password: "test",
+		},
+	}
+	// first request should succeed
+	res1, err := client.Get(ts.URL)
+	assert.NilError(t, err)
+	assert.Equal(t, res1.StatusCode, http.StatusOK)
+	// second request should fail
+	_, err = client.Get(ts.URL)
+	assert.Assert(t, errors.Is(err, ErrNoChallenge))
 }
