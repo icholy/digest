@@ -69,7 +69,8 @@ func (t *Transport) save(res *http.Response) error {
 	}
 	// TODO: if the challenge contains a domain, we should be using that
 	//       to match against outgoing requests. We're currently ignoring
-	//       it and just matching the hostname.
+	//       it and just matching the hostname. That being said, none of
+	//       the major browsers respect the domain either.
 	host := res.Request.URL.Hostname()
 	if err == nil {
 		t.cache[host] = &cchal{c: chal}
