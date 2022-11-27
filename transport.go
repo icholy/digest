@@ -42,6 +42,9 @@ type Transport struct {
 	// set on the Request.
 	Jar http.CookieJar
 
+	// NoReuse prevents the transport from reusing challenges.
+	NoReuse bool
+
 	// cache of challenges indexed by host
 	cache   map[string]*cchal
 	cacheMu sync.Mutex
@@ -102,6 +105,9 @@ func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
 	cc, ok := t.cache[host]
 	if !ok {
 		return nil, 0, false
+	}
+	if t.NoReuse {
+		delete(t.cache, host)
 	}
 	cc.n++
 	return cc.c, cc.n, true
