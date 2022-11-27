@@ -59,25 +59,22 @@ func (t *Transport) save(res *http.Response) error {
 	if find == nil {
 		find = FindChallenge
 	}
-	host := res.Request.URL.Hostname()
 	chal, err := find(res.Header)
 	t.cacheMu.Lock()
-	if err != nil {
-		if t.cache != nil {
-			delete(t.cache, host)
-		}
-		t.cacheMu.Unlock()
-		return err
-	}
 	if t.cache == nil {
 		t.cache = map[string]*cchal{}
 	}
 	// TODO: if the challenge contains a domain, we should be using that
 	//       to match against outgoing requests. We're currently ignoring
 	//       it and just matching the hostname.
-	t.cache[host] = &cchal{c: chal}
+	host := res.Request.URL.Hostname()
+	if err != nil {
+		delete(t.cache, host)
+	} else {
+		t.cache[host] = &cchal{c: chal}
+	}
 	t.cacheMu.Unlock()
-	return nil
+	return err
 }
 
 // digest creates credentials from the cached challenge
