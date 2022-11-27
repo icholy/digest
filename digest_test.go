@@ -116,9 +116,7 @@ func TestDigestAuthInt(t *testing.T) {
 		Nonce:     "7a5462bc2121c2e609e6f71c64d341c1",
 		Opaque:    "5498295c3383fbb467b160f1143e51d4",
 		Algorithm: "MD5",
-		QOP: []string{
-			"auth-int",
-		},
+		QOP:       []string{"auth-int"},
 	}
 	cred, err := Digest(chal, opt)
 	assert.NilError(t, err)
