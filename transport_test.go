@@ -1,7 +1,6 @@
 package digest
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -157,7 +156,8 @@ func TestTransportNoChallenge(t *testing.T) {
 	res1, err := client.Get(ts.URL)
 	assert.NilError(t, err)
 	assert.Equal(t, res1.StatusCode, http.StatusOK)
-	// second request should fail
-	_, err = client.Get(ts.URL)
-	assert.Assert(t, errors.Is(err, ErrNoChallenge))
+	// second request should return the status Unauthorized
+	res2, err := client.Get(ts.URL)
+	assert.NilError(t, err)
+	assert.Equal(t, res2.StatusCode, http.StatusUnauthorized)
 }
