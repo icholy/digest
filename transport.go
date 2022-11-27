@@ -184,6 +184,20 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return tr.RoundTrip(second)
 }
 
+// CloseIdleConnections delegates the call to the underlying transport.
+func (t *Transport) CloseIdleConnections() {
+	tr := t.Transport
+	if tr == nil {
+		tr = http.DefaultTransport
+	}
+	type closeIdler interface {
+		CloseIdleConnections()
+	}
+	if tr, ok := tr.(closeIdler); ok {
+		tr.CloseIdleConnections()
+	}
+}
+
 // cloner returns a function which makes clones of the provided request
 func cloner(req *http.Request) (func() (*http.Request, error), error) {
 	getbody := req.GetBody

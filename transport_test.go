@@ -120,7 +120,6 @@ func TestTransportLive(t *testing.T) {
 			assert.NilError(t, err)
 			defer res.Body.Close()
 			assert.Assert(t, res.StatusCode == http.StatusOK)
-			defer client.CloseIdleConnections()
 		})
 	}
 }
