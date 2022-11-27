@@ -51,12 +51,6 @@ func TestFindChallenge(t *testing.T) {
 		Algorithm: "MD5-sess",
 		QOP:       []string{"auth"},
 	}
-	bad2 := &Challenge{
-		Realm:     "test",
-		Nonce:     "9jksdurjksdf",
-		Algorithm: "MD5",
-		QOP:       []string{"auth-int"},
-	}
 	good := &Challenge{
 		Realm:     "test",
 		Nonce:     "jgdfsijdfisd",
@@ -65,7 +59,6 @@ func TestFindChallenge(t *testing.T) {
 	}
 	headers := http.Header{}
 	headers.Add("WWW-Authenticate", bad1.String())
-	headers.Add("WWW-Authenticate", bad2.String())
 	headers.Add("WWW-Authenticate", good.String())
 	chal, err := FindChallenge(headers)
 	assert.NilError(t, err)

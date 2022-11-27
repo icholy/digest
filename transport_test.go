@@ -77,14 +77,26 @@ func TestTransportLive(t *testing.T) {
 		password string
 	}{
 		{
-			name:     "httpbin",
+			name:     "httpbin-auth",
 			url:      "http://httpbin.org/digest-auth/auth/foo/bar",
 			username: "foo",
 			password: "bar",
 		},
 		{
-			name:     "httpbin",
+			name:     "httpbin-auth-int",
+			url:      "http://httpbin.org/digest-auth/auth-int/foo/bar",
+			username: "foo",
+			password: "bar",
+		},
+		{
+			name:     "httpbin-auth-sha256",
 			url:      "http://httpbin.org/digest-auth/auth/foo/bar/SHA-512",
+			username: "foo",
+			password: "bar",
+		},
+		{
+			name:     "httpbin-auth-int-sha256",
+			url:      "http://httpbin.org/digest-auth/auth-int/foo/bar/SHA-512",
 			username: "foo",
 			password: "bar",
 		},
@@ -97,6 +109,7 @@ func TestTransportLive(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			client := http.Client{
 				Transport: &Transport{
 					Username: tt.username,

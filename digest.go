@@ -24,6 +24,7 @@ func IsDigest(header string) bool {
 type Options struct {
 	Method   string
 	URI      string
+	GetBody  func() (io.ReadCloser, error)
 	Count    int
 	Username string
 	Password string
@@ -39,7 +40,7 @@ func CanDigest(c *Challenge) bool {
 	default:
 		return false
 	}
-	return len(c.QOP) == 0 || c.SupportsQOP("auth")
+	return len(c.QOP) == 0 || c.SupportsQOP("auth") || c.SupportsQOP("auth-int")
 }
 
 // Digest creates credentials from a challenge and request options.
@@ -70,9 +71,6 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	default:
 		return nil, fmt.Errorf("digest: unsupported algorithm: %q", cred.Algorithm)
 	}
-	// create the a1 & a2 values as described in the rfc
-	a1 := hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password)
-	a2 := hashf(h, "%s:%s", o.Method, o.URI)
 	// hash the username if requested
 	if cred.Userhash {
 		cred.Username = hashf(h, "%s:%s", o.Username, cred.Realm)
@@ -80,7 +78,11 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	// generate the response
 	switch {
 	case len(chal.QOP) == 0:
-		cred.Response = hashf(h, "%s:%s:%s", a1, cred.Nonce, a2)
+		cred.Response = hashf(h, "%s:%s:%s",
+			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			cred.Nonce,
+			hashf(h, "%s:%s", o.Method, o.URI), // A2
+		)
 	case chal.SupportsQOP("auth"):
 		cred.QOP = "auth"
 		if cred.Cnonce == "" {
@@ -89,7 +91,34 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 		if cred.Nc == 0 {
 			cred.Nc = 1
 		}
-		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s", a1, cred.Nonce, cred.Nc, cred.Cnonce, cred.QOP, a2)
+		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
+			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			cred.Nonce,
+			cred.Nc,
+			cred.Cnonce,
+			cred.QOP,
+			hashf(h, "%s:%s", o.Method, o.URI), // A2
+		)
+	case chal.SupportsQOP("auth-int"):
+		cred.QOP = "auth-int"
+		if cred.Cnonce == "" {
+			cred.Cnonce = cnonce()
+		}
+		if cred.Nc == 0 {
+			cred.Nc = 1
+		}
+		hbody, err := hashbody(h, o.GetBody)
+		if err != nil {
+			return nil, fmt.Errorf("digest: failed to read body for auth-int: %w", err)
+		}
+		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
+			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			cred.Nonce,
+			cred.Nc,
+			cred.Cnonce,
+			cred.QOP,
+			hashf(h, "%s:%s:%s", o.Method, o.URI, hbody), // A2
+		)
 	default:
 		return nil, fmt.Errorf("digest: unsupported qop: %q", strings.Join(chal.QOP, ","))
 	}
@@ -100,6 +129,21 @@ func hashf(h hash.Hash, format string, args ...interface{}) string {
 	h.Reset()
 	fmt.Fprintf(h, format, args...)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func hashbody(h hash.Hash, getbody func() (io.ReadCloser, error)) (string, error) {
+	h.Reset()
+	if getbody != nil {
+		r, err := getbody()
+		if err != nil {
+			return "", err
+		}
+		defer r.Close()
+		if _, err := io.Copy(h, r); err != nil {
+			return "", err
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func cnonce() string {

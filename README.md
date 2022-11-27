@@ -142,6 +142,7 @@ func main() {
     Password: "bar",
     Method:   req.Method,
     URI:      req.URL.RequestURI(),
+    GetBody:  req.GetBody,
     Count:    1,
   })
   req.Header.Set("Authorization", cred.String())
@@ -152,6 +153,7 @@ func main() {
     Password: "bar",
     Method:   req2.Method,
     URI:      req2.URL.RequestURI(),
+    GetBody:  req2.GetBody,
     Count:    2,
   })
   req2.Header.Set("Authorization", cred.String())

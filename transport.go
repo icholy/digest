@@ -83,6 +83,7 @@ func (t *Transport) digest(req *http.Request, chal *Challenge, count int) (*Cred
 	opt := Options{
 		Method:   req.Method,
 		URI:      req.URL.RequestURI(),
+		GetBody:  req.GetBody,
 		Count:    count,
 		Username: t.Username,
 		Password: t.Password,
