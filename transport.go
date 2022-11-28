@@ -64,6 +64,7 @@ func (t *Transport) save(res *http.Response) error {
 	}
 	chal, err := find(res.Header)
 	t.cacheMu.Lock()
+	defer t.cacheMu.Unlock()
 	if t.cache == nil {
 		t.cache = map[string]*cchal{}
 	}
@@ -72,14 +73,13 @@ func (t *Transport) save(res *http.Response) error {
 	//       it and just matching the hostname. That being said, none of
 	//       the major browsers respect the domain either.
 	host := res.Request.URL.Hostname()
-	if err == nil {
-		t.cache[host] = &cchal{c: chal}
-	} else {
+	if err != nil {
 		// if save is being invoked, the existing cached challenge didn't work
 		delete(t.cache, host)
+		return err
 	}
-	t.cacheMu.Unlock()
-	return err
+	t.cache[host] = &cchal{c: chal}
+	return nil
 }
 
 // digest creates credentials from the cached challenge
