@@ -68,7 +68,7 @@ func (t *Transport) save(res *http.Response) error {
 	//       to match against outgoing requests. We're currently ignoring
 	//       it and just matching the hostname.
 	host := res.Request.URL.Hostname()
-	if chal != nil {
+	if err == nil {
 		t.cache[host] = &cchal{c: chal}
 	} else {
 		// if save is being invoked, the existing cached challenge didn't work
