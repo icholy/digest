@@ -2,7 +2,6 @@ package digest
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"sync"
@@ -69,7 +68,7 @@ func (t *Transport) save(res *http.Response) error {
 	//       to match against outgoing requests. We're currently ignoring
 	//       it and just matching the hostname.
 	host := res.Request.URL.Hostname()
-	if err == nil {
+	if chal != nil {
 		t.cache[host] = &cchal{c: chal}
 	} else {
 		// if save is being invoked, the existing cached challenge didn't work
@@ -164,7 +163,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	_ = res.Body.Close()
 	// save the challenge for future use
 	if err := t.save(res); err != nil {
-		if errors.Is(err, ErrNoChallenge) {
+		if err == ErrNoChallenge {
 			return res, nil
 		}
 		return nil, err
