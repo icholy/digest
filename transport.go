@@ -170,6 +170,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	_ = res.Body.Close()
 	// save the challenge for future use
 	if err := t.save(res); err != nil {
+		if err == ErrNoChallenge {
+			return res, nil
+		}
 		return nil, err
 	}
 	// make a second copy of the request
