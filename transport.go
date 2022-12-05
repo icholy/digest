@@ -204,15 +204,21 @@ func (t *Transport) CloseIdleConnections() {
 // cloner returns a function which makes clones of the provided request
 func cloner(req *http.Request) (func() (*http.Request, error), error) {
 	getbody := req.GetBody
-	if getbody == nil && req.Body != nil && req.Body != http.NoBody {
+	if getbody == nil && req.Body != nil {
 		// if there's no GetBody function set we have to copy the body
 		// into memory to use for future clones
-		body, err := io.ReadAll(req.Body)
-		if err != nil {
-			return nil, err
-		}
-		getbody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(body)), nil
+		if req.Body == http.NoBody {
+			getbody = func() (io.ReadCloser, error) {
+				return http.NoBody, nil
+			}
+		} else {
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			getbody = func() (io.ReadCloser, error) {
+				return io.NopCloser(bytes.NewReader(body)), nil
+			}
 		}
 	}
 	return func() (*http.Request, error) {
