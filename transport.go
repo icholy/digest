@@ -206,15 +206,17 @@ func cloner(req *http.Request) (func() (*http.Request, error), error) {
 	getbody := req.GetBody
 	// if there's no GetBody function set we have to copy the body
 	// into memory to use for future clones
-	if getbody == nil && req.Body != nil {
-		// optimise http.NoBody
-		if req.Body == http.NoBody {
+	if getbody == nil {
+		if req.Body == nil || req.Body == http.NoBody {
 			getbody = func() (io.ReadCloser, error) {
 				return http.NoBody, nil
 			}
 		} else {
 			body, err := io.ReadAll(req.Body)
 			if err != nil {
+				return nil, err
+			}
+			if err := req.Body.Close(); err != nil {
 				return nil, err
 			}
 			getbody = func() (io.ReadCloser, error) {
@@ -224,14 +226,12 @@ func cloner(req *http.Request) (func() (*http.Request, error), error) {
 	}
 	return func() (*http.Request, error) {
 		clone := req.Clone(req.Context())
-		if getbody != nil {
-			body, err := getbody()
-			if err != nil {
-				return nil, err
-			}
-			clone.Body = body
-			clone.GetBody = getbody
+		body, err := getbody()
+		if err != nil {
+			return nil, err
 		}
+		clone.Body = body
+		clone.GetBody = getbody
 		return clone, nil
 	}, nil
 }
