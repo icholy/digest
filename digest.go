@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"net/http"
 	"strings"
 )
 
@@ -139,8 +140,10 @@ func hashbody(h hash.Hash, getbody func() (io.ReadCloser, error)) (string, error
 			return "", err
 		}
 		defer r.Close()
-		if _, err := io.Copy(h, r); err != nil {
-			return "", err
+		if r != http.NoBody {
+			if _, err := io.Copy(h, r); err != nil {
+				return "", err
+			}
 		}
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
