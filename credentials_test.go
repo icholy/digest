@@ -1,7 +1,6 @@
 package digest
 
 import (
-	"strconv"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -42,8 +41,8 @@ func TestCredentials(t *testing.T) {
 			},
 		},
 	}
-	for i, tt := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
 			c, err := ParseCredentials(tt.input)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, c, tt.credentials)

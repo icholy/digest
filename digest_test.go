@@ -1,7 +1,6 @@
 package digest
 
 import (
-	"strconv"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -69,8 +68,8 @@ func TestDigestMD5(t *testing.T) {
 			},
 		},
 	}
-	for i, tt := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
 			cred, err := Digest(tt.chal, tt.opt)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, cred, tt.cred)
