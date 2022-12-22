@@ -77,6 +77,9 @@ func main() {
 			Password: "bar",
 			FindChallenge: func(h http.Header) (*digest.Challenge, error) {
 				value := h.Get("Custom-Authenticate-Header")
+				if value == "" {
+					return nil, digest.ErrNoChallenge
+				}
 				return digest.ParseChallenge(value)
 			},
 		},
