@@ -62,7 +62,6 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	var h hash.Hash
 	switch cred.Algorithm {
 	case "", "MD5":
-		cred.Algorithm = "MD5"
 		h = md5.New()
 	case "SHA-256":
 		h = sha256.New()
