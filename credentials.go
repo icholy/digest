@@ -91,11 +91,6 @@ func (c *Credentials) String() string {
 			Value: c.URI,
 			Quote: true,
 		},
-		param.Param{
-			Key:   "response",
-			Value: c.Response,
-			Quote: true,
-		},
 	)
 	if c.Algorithm != "" {
 		pp = append(pp, param.Param{
@@ -135,5 +130,12 @@ func (c *Credentials) String() string {
 			Value: "true",
 		})
 	}
+	// The RFC does not specify an order, but some implementations expect the response to be at the end.
+	// See: https://github.com/icholy/digest/issues/8
+	pp = append(pp, param.Param{
+		Key:   "response",
+		Value: c.Response,
+		Quote: true,
+	})
 	return Prefix + param.Format(pp...)
 }
