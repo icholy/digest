@@ -35,6 +35,7 @@ func TestTransport(t *testing.T) {
 			cred2, err := Digest(chal, Options{
 				Method:   r.Method,
 				URI:      r.URL.RequestURI(),
+				Cnonce:   cred.Cnonce,
 				Count:    cred.Nc,
 				Username: username,
 				Password: password,
@@ -43,7 +44,7 @@ func TestTransport(t *testing.T) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			authorized = cred.Response != cred2.Response
+			authorized = cred.Response == cred2.Response
 		}
 		if !authorized {
 			w.Header().Add("WWW-Authenticate", chal.String())
