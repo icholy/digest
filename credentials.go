@@ -26,10 +26,11 @@ type Credentials struct {
 
 // ParseCredentials parses the Authorization header value into credentials
 func ParseCredentials(s string) (*Credentials, error) {
-	if !IsDigest(s) {
+	s, ok := strings.CutPrefix(s, Prefix)
+	if !ok {
 		return nil, errors.New("digest: invalid credentials prefix")
 	}
-	pp, err := param.Parse(s[len(Prefix):])
+	pp, err := param.Parse(s)
 	if err != nil {
 		return nil, err
 	}
