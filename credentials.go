@@ -48,7 +48,7 @@ func ParseCredentials(s string) (*Credentials, error) {
 		case "response":
 			c.Response = p.Value
 		case "algorithm":
-			c.Algorithm = p.Value
+			c.Algorithm = strings.ToUpper(p.Value)
 		case "cnonce":
 			c.Cnonce = p.Value
 		case "opaque":
@@ -96,7 +96,7 @@ func (c *Credentials) String() string {
 	if c.Algorithm != "" {
 		pp = append(pp, param.Param{
 			Key:   "algorithm",
-			Value: c.Algorithm,
+			Value: strings.ToUpper(c.Algorithm),
 		})
 	}
 	if c.QOP != "" {

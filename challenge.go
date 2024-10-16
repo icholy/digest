@@ -52,7 +52,7 @@ func ParseChallenge(s string) (*Challenge, error) {
 		case "nonce":
 			c.Nonce = p.Value
 		case "algorithm":
-			c.Algorithm = p.Value
+			c.Algorithm = strings.ToUpper(p.Value)
 		case "stale":
 			c.Stale = strings.ToLower(p.Value) == "true"
 		case "opaque":
@@ -104,7 +104,7 @@ func (c *Challenge) String() string {
 	if c.Algorithm != "" {
 		pp = append(pp, param.Param{
 			Key:   "algorithm",
-			Value: c.Algorithm,
+			Value: strings.ToUpper(c.Algorithm),
 		})
 	}
 	if len(c.QOP) != 0 {
