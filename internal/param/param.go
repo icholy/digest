@@ -2,7 +2,6 @@ package param
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -40,6 +39,10 @@ func Parse(s string) ([]Param, error) {
 	var pp []Param
 	br := bufio.NewReader(strings.NewReader(s))
 	for i := 0; true; i++ {
+		// skip whitespace
+		if err := skipWhite(br); err != nil {
+			return nil, err
+		}
 		// see if there's more to read
 		if _, err := br.Peek(1); err == io.EOF {
 			break
@@ -75,15 +78,25 @@ func parseIdent(br *bufio.Reader) (string, error) {
 	return string(ident), nil
 }
 
+func parseByte(br *bufio.Reader, expect byte) error {
+	b, err := br.ReadByte()
+	if err != nil {
+		if err == io.EOF {
+			return fmt.Errorf("expected '%c', got EOF", expect)
+		}
+		return err
+	}
+	if b != expect {
+		return fmt.Errorf("expected '%c', got '%c'", expect, b)
+	}
+	return nil
+}
+
 func parseString(br *bufio.Reader) (string, error) {
 	var s []rune
 	// read the open quote
-	b, err := br.ReadByte()
-	if err != nil {
+	if err := parseByte(br, '"'); err != nil {
 		return "", err
-	}
-	if b != '"' {
-		return "", errors.New("missing open quote")
 	}
 	// read the string
 	var escaped bool
@@ -110,21 +123,33 @@ func parseString(br *bufio.Reader) (string, error) {
 	return string(s), nil
 }
 
-func skipComma(br *bufio.Reader) error {
+func skipWhite(br *bufio.Reader) error {
 	for {
 		b, err := br.ReadByte()
 		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
 			return err
 		}
-		if b != ' ' && b != ',' {
+		if b != ' ' {
 			return br.UnreadByte()
 		}
 	}
 }
 
 func parseParam(br *bufio.Reader, first bool) (Param, error) {
+	// skip whitespace
+	if err := skipWhite(br); err != nil {
+		return Param{}, err
+	}
 	if !first {
-		if err := skipComma(br); err != nil {
+		// read the comma separator
+		if err := parseByte(br, ','); err != nil {
+			return Param{}, err
+		}
+		// skip whitespace
+		if err := skipWhite(br); err != nil {
 			return Param{}, err
 		}
 	}
@@ -133,13 +158,17 @@ func parseParam(br *bufio.Reader, first bool) (Param, error) {
 	if err != nil {
 		return Param{}, err
 	}
-	// read the equals sign
-	eq, err := br.ReadByte()
-	if err != nil {
+	// skip whitespace
+	if err := skipWhite(br); err != nil {
 		return Param{}, err
 	}
-	if eq != '=' {
-		return Param{}, fmt.Errorf("expected '=', got %c", eq)
+	// read the equals sign
+	if err := parseByte(br, '='); err != nil {
+		return Param{}, err
+	}
+	// skip whitespace
+	if err := skipWhite(br); err != nil {
+		return Param{}, err
 	}
 	// read the value
 	var value string
