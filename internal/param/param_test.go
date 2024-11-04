@@ -10,6 +10,7 @@ import (
 func TestParam(t *testing.T) {
 	tests := []struct {
 		input  string
+		output string
 		err    string
 		params []Param
 	}{
@@ -84,6 +85,14 @@ func TestParam(t *testing.T) {
 				{Key: "key", Value: "Hello, 世界", Quote: true},
 			},
 		},
+		{
+			input:  " key   = value ,  key2 = value2  ",
+			output: "key=value, key2=value2",
+			params: []Param{
+				{Key: "key", Value: "value"},
+				{Key: "key2", Value: "value2"},
+			},
+		},
 	}
 	for i, tt := range tests {
 		tt := tt
@@ -101,7 +110,11 @@ func TestParam(t *testing.T) {
 				if tt.err != "" {
 					return
 				}
-				assert.DeepEqual(t, Format(tt.params...), tt.input)
+				output := tt.output
+				if output == "" {
+					output = tt.input
+				}
+				assert.DeepEqual(t, Format(tt.params...), output)
 			})
 		})
 	}
