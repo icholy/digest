@@ -2,6 +2,7 @@ package digest
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -40,7 +41,7 @@ func ParseChallenge(s string) (*Challenge, error) {
 	}
 	pp, err := param.Parse(s)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("digest: invalid challenge: %w", err)
 	}
 	var c Challenge
 	for _, p := range pp {

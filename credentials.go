@@ -32,7 +32,7 @@ func ParseCredentials(s string) (*Credentials, error) {
 	}
 	pp, err := param.Parse(s)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("digest: invalid credentials: %w", err)
 	}
 	var c Credentials
 	for _, p := range pp {
