@@ -36,8 +36,7 @@ type Options struct {
 
 // CanDigest checks if the algorithm and qop are supported
 func CanDigest(c *Challenge) bool {
-	algorithm := strings.ToUpper(c.Algorithm)
-	switch algorithm {
+	switch strings.ToUpper(c.Algorithm) {
 	case "", "MD5", "SHA-256", "SHA-512", "SHA-512-256":
 	default:
 		return false
@@ -61,8 +60,7 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	}
 	// we re-use the same hash.Hash
 	var h hash.Hash
-	algorithm := strings.ToUpper(cred.Algorithm)
-	switch algorithm {
+	switch strings.ToUpper(cred.Algorithm) {
 	case "", "MD5":
 		h = md5.New()
 	case "SHA-256":
