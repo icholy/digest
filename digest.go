@@ -27,6 +27,7 @@ type Options struct {
 	URI      string
 	GetBody  func() (io.ReadCloser, error)
 	Count    int
+	A1       string
 	Username string
 	Password string
 
@@ -76,11 +77,18 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	if cred.Userhash {
 		cred.Username = hashf(h, "%s:%s", o.Username, cred.Realm)
 	}
+
+	a1 := o.A1
+
+	if a1 == "" {
+		a1 = hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password)
+	}
+
 	// generate the response
 	switch {
 	case len(chal.QOP) == 0:
 		cred.Response = hashf(h, "%s:%s:%s",
-			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			a1, // A1
 			cred.Nonce,
 			hashf(h, "%s:%s", o.Method, o.URI), // A2
 		)
@@ -93,7 +101,7 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 			cred.Nc = 1
 		}
 		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
-			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			a1, // A1
 			cred.Nonce,
 			cred.Nc,
 			cred.Cnonce,
@@ -113,7 +121,7 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 			return nil, fmt.Errorf("digest: failed to read body for auth-int: %w", err)
 		}
 		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
-			hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password), // A1
+			a1, // A1
 			cred.Nonce,
 			cred.Nc,
 			cred.Cnonce,
