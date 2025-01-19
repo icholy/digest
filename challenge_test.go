@@ -71,3 +71,19 @@ func TestFindChallenge_NotFound(t *testing.T) {
 		t.Fatalf("not an expected error: %s, expected ErrNoChallenge", err.Error())
 	}
 }
+
+var challengeResult *Challenge
+
+func BenchmarkParseChallenge(b *testing.B) {
+	input := `Digest realm="AXIS_ACCC8EB3494E", nonce="PNHWZB6nBQA=316099a140230c2db387fc75ee1c8ae838a750d8", stale=true, algorithm=MD5, qop="auth"`
+	var chal *Challenge
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		chal, err = ParseChallenge(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	challengeResult = chal
+}

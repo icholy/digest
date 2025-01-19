@@ -50,3 +50,19 @@ func TestCredentials(t *testing.T) {
 		})
 	}
 }
+
+var credentialsResult *Credentials
+
+func BenchmarkParseCredentials(b *testing.B) {
+	input := `Digest username="root", realm="AXIS_ACCC8EB3494E", nonce="PNHWZB6nBQA=316099a140230c2db387fc75ee1c8ae838a750d8", uri="/axis-cgi/com/ptz.cgi?camera=1&continuouspantiltmove=-49,0", algorithm=MD5, cnonce="17b7311e0c27a979", qop=auth, nc=00000003, response="9bbb9764c769f388f8e5ff4d26bd0449"`
+	var cred *Credentials
+	b.ResetTimer()
+	for range b.N {
+		var err error
+		cred, err = ParseCredentials(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	credentialsResult = cred // prevent optimization
+}

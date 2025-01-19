@@ -211,3 +211,32 @@ func TestDigestAuthInt(t *testing.T) {
 		Nc:        1,
 	})
 }
+
+var digestResult *Credentials
+
+func BenchmarkDigest(b *testing.B) {
+	opt := Options{
+		Method:   "GET",
+		URI:      "/dir/index.html",
+		Username: "Mufasa",
+		Password: "Circle of Life",
+		Cnonce:   "f2/wE4q74E6zIJEtWaHKaf5wv/H5QzzpXusqGemxURZJ",
+	}
+	chal := &Challenge{
+		Realm:     "http-auth@example.org",
+		Algorithm: "MD5",
+		Nonce:     "7ypf/xlj9XXwfDPEoM4URrv/xwf94BcCAzFZH4GiTo0v",
+		Opaque:    "FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS",
+		QOP:       []string{"auth", "auth-int"},
+	}
+	var cred *Credentials
+	b.ResetTimer()
+	for range b.N {
+		var err error
+		cred, err = Digest(chal, opt)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	digestResult = cred // prevent optimizations
+}
