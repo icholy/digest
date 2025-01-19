@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -17,9 +18,9 @@ type Param struct {
 // String returns the formatted parameter
 func (p Param) String() string {
 	if p.Quote {
-		return fmt.Sprintf("%s=%q", p.Key, p.Value)
+		return p.Key + "=" + strconv.Quote(p.Value)
 	}
-	return fmt.Sprintf("%s=%s", p.Key, p.Value)
+	return p.Key + "=" + p.Value
 }
 
 // Format formats the parameters to be included in the header
