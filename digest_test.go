@@ -112,10 +112,17 @@ func TestDigestSHA256(t *testing.T) {
 }
 
 func TestDigestA1(t *testing.T) {
+	h := sha256.New()
+	fmt.Fprintf(h, "%s:%s:%s",
+		"Mufasa",                // username
+		"http-auth@example.org", // realm
+		"Circle of Life",        // password
+	)
+	a1 := hex.EncodeToString(h.Sum(nil))
 	opt := Options{
 		Method: "GET",
 		URI:    "/dir/index.html",
-		A1:     sha265Hash("%s:%s:%s", "Mufasa", "http-auth@example.org", "Circle of Life"),
+		A1:     a1,
 		Cnonce: "f2/wE4q74E6zIJEtWaHKaf5wv/H5QzzpXusqGemxURZJ",
 	}
 	chal := &Challenge{
@@ -203,10 +210,4 @@ func TestDigestAuthInt(t *testing.T) {
 		QOP:       "auth-int",
 		Nc:        1,
 	})
-}
-
-func sha265Hash(format string, args ...interface{}) string {
-	h := sha256.New()
-	fmt.Fprintf(h, format, args...)
-	return hex.EncodeToString(h.Sum(nil))
 }
