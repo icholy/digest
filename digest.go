@@ -159,7 +159,7 @@ func hashbody(h hash.Hash, getbody func() (io.ReadCloser, error)) (string, error
 
 func cnonce() string {
 	var b [8]byte
-	if _, err := io.ReadFull(rand.Reader, b[:]); err != nil {
+	if _, err := rand.Read(b[:]); err != nil {
 		panic(fmt.Sprintf("digest: failed to generate cnonce: %v", err))
 	}
 	return hex.EncodeToString(b[:])
