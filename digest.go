@@ -77,20 +77,20 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	}
 	// hash the username if requested
 	if cred.Userhash {
-		cred.Username = hashf(h, "%s:%s", o.Username, cred.Realm)
+		cred.Username = hashjoin(h, o.Username, cred.Realm)
 	}
 	// generate the a1 hash if one was not provided
 	a1 := o.A1
 	if a1 == "" {
-		a1 = hashf(h, "%s:%s:%s", o.Username, cred.Realm, o.Password)
+		a1 = hashjoin(h, o.Username, cred.Realm, o.Password)
 	}
 	// generate the response
 	switch {
 	case len(chal.QOP) == 0:
-		cred.Response = hashf(h, "%s:%s:%s",
+		cred.Response = hashjoin(h,
 			a1,
 			cred.Nonce,
-			hashf(h, "%s:%s", o.Method, o.URI), // A2
+			hashjoin(h, o.Method, o.URI), // A2
 		)
 	case chal.SupportsQOP("auth"):
 		cred.QOP = "auth"
@@ -100,13 +100,13 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 		if cred.Nc == 0 {
 			cred.Nc = 1
 		}
-		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
+		cred.Response = hashjoin(h,
 			a1,
 			cred.Nonce,
-			cred.Nc,
+			fmt.Sprintf("%08x", cred.Nc),
 			cred.Cnonce,
 			cred.QOP,
-			hashf(h, "%s:%s", o.Method, o.URI), // A2
+			hashjoin(h, o.Method, o.URI), // A2
 		)
 	case chal.SupportsQOP("auth-int"):
 		cred.QOP = "auth-int"
@@ -120,13 +120,13 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 		if err != nil {
 			return nil, fmt.Errorf("digest: failed to read body for auth-int: %w", err)
 		}
-		cred.Response = hashf(h, "%s:%s:%08x:%s:%s:%s",
+		cred.Response = hashjoin(h,
 			a1,
 			cred.Nonce,
-			cred.Nc,
+			fmt.Sprintf("%08x", cred.Nc),
 			cred.Cnonce,
 			cred.QOP,
-			hashf(h, "%s:%s:%s", o.Method, o.URI, hbody), // A2
+			hashjoin(h, o.Method, o.URI, hbody), // A2
 		)
 	default:
 		return nil, fmt.Errorf("digest: unsupported qop: %q", strings.Join(chal.QOP, ","))
@@ -134,9 +134,14 @@ func Digest(chal *Challenge, o Options) (*Credentials, error) {
 	return cred, nil
 }
 
-func hashf(h hash.Hash, format string, args ...interface{}) string {
+func hashjoin(h hash.Hash, parts ...string) string {
 	h.Reset()
-	fmt.Fprintf(h, format, args...)
+	for i, part := range parts {
+		if i > 0 {
+			h.Write([]byte(":"))
+		}
+		h.Write([]byte(part))
+	}
 	return hex.EncodeToString(h.Sum(nil))
 }
 
