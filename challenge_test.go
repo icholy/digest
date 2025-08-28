@@ -33,15 +33,33 @@ func TestChallenge(t *testing.T) {
 				QOP:       []string{"auth"},
 			},
 		},
+		{
+			input: `DIGEST realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
+			challenge: &Challenge{
+				Realm:     "DLI LPC92601002528",
+				Nonce:     "NZAeQHhoCNifFjFa",
+			},
+		},
 	}
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			c, err := ParseChallenge(tt.input)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, tt.challenge, c)
-			assert.DeepEqual(t, c.String(), tt.input)
+			assertChallengeStringEqual(t, tt.input, c.String())
 		})
 	}
+}
+
+func assertChallengeStringEqual(t *testing.T, expected, actual string) {
+    t.Helper()
+
+	ep, ok := CutPrefix(expected)
+	assert.Equal(t, ok, true, "expected should have prefix")
+	ap, ok := CutPrefix(actual)
+	assert.Equal(t, ok, true, "actual should have prefix")
+
+	assert.DeepEqual(t, ep, ap)
 }
 
 func TestFindChallenge(t *testing.T) {
