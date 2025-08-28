@@ -95,7 +95,6 @@ func TestParam(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		tt := tt
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Run("Parse", func(t *testing.T) {
 				params, err := Parse(tt.input)
