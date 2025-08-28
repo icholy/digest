@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/icholy/digest/internal/param"
@@ -25,12 +26,7 @@ type Challenge struct {
 // SupportsQOP returns true if the challenge advertises support
 // for the provided qop value
 func (c *Challenge) SupportsQOP(qop string) bool {
-	for _, v := range c.QOP {
-		if v == qop {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.QOP, qop)
 }
 
 // ParseChallenge parses the WWW-Authenticate header challenge
