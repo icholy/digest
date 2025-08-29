@@ -78,25 +78,25 @@ func TestTransportLive(t *testing.T) {
 	}{
 		{
 			name:     "httpbin-auth",
-			url:      "http://httpbin.org/digest-auth/auth/foo/bar",
+			url:      "https://httpbun.com/digest-auth/auth/foo/bar",
 			username: "foo",
 			password: "bar",
 		},
 		{
 			name:     "httpbin-auth-int",
-			url:      "http://httpbin.org/digest-auth/auth-int/foo/bar",
+			url:      "https://httpbun.com/digest-auth/auth-int/foo/bar",
 			username: "foo",
 			password: "bar",
 		},
 		{
 			name:     "httpbin-auth-sha256",
-			url:      "http://httpbin.org/digest-auth/auth/foo/bar/SHA-512",
+			url:      "https://httpbun.com/digest-auth/auth/foo/bar",
 			username: "foo",
 			password: "bar",
 		},
 		{
 			name:     "httpbin-auth-int-sha256",
-			url:      "http://httpbin.org/digest-auth/auth-int/foo/bar/SHA-512",
+			url:      "https://httpbun.com/digest-auth/auth-int/foo/bar",
 			username: "foo",
 			password: "bar",
 		},

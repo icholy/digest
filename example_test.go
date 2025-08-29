@@ -13,13 +13,13 @@ func ExampleTransport() {
 			Password: "bar",
 		},
 	}
-	res, _ := client.Get("http://httpbin.org/digest-auth/auth/foo/bar/SHA-512")
+	res, _ := client.Get("https://httpbun.com/digest-auth/auth/foo/bar")
 	println(res.Status)
 }
 
 func ExampleDigest() {
 	// The first request will return a 401 Unauthorized response
-	req, _ := http.NewRequest(http.MethodGet, "http://httpbin.org/digest-auth/auth/foo/bar/SHA-512", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://httpbun.com/digest-auth/auth/foo/bar", nil)
 	res, _ := http.DefaultClient.Do(req)
 	// Create digest credentials from the request challenge
 	chal, _ := digest.FindChallenge(res.Header)
