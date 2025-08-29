@@ -77,25 +77,13 @@ func TestTransportLive(t *testing.T) {
 		password string
 	}{
 		{
-			name:     "httpbin-auth",
+			name:     "httpbun-auth",
 			url:      "https://httpbun.com/digest-auth/auth/foo/bar",
 			username: "foo",
 			password: "bar",
 		},
 		{
-			name:     "httpbin-auth-int",
-			url:      "https://httpbun.com/digest-auth/auth-int/foo/bar",
-			username: "foo",
-			password: "bar",
-		},
-		{
-			name:     "httpbin-auth-sha256",
-			url:      "https://httpbun.com/digest-auth/auth/foo/bar",
-			username: "foo",
-			password: "bar",
-		},
-		{
-			name:     "httpbin-auth-int-sha256",
+			name:     "httpbun-auth-int",
 			url:      "https://httpbun.com/digest-auth/auth-int/foo/bar",
 			username: "foo",
 			password: "bar",
