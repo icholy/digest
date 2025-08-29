@@ -12,6 +12,7 @@ import (
 func TestChallenge(t *testing.T) {
 	tests := []struct {
 		input     string
+		output    string
 		challenge *Challenge
 	}{
 		{
@@ -34,10 +35,11 @@ func TestChallenge(t *testing.T) {
 			},
 		},
 		{
-			input: `DIGEST realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
+			input:  `DIGEST realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
+			output: `Digest realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
 			challenge: &Challenge{
-				Realm:     "DLI LPC92601002528",
-				Nonce:     "NZAeQHhoCNifFjFa",
+				Realm: "DLI LPC92601002528",
+				Nonce: "NZAeQHhoCNifFjFa",
 			},
 		},
 	}
@@ -46,20 +48,13 @@ func TestChallenge(t *testing.T) {
 			c, err := ParseChallenge(tt.input)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, tt.challenge, c)
-			assertChallengeStringEqual(t, tt.input, c.String())
+			output := tt.output
+			if output == "" {
+				output = tt.input
+			}
+			assert.DeepEqual(t, output, c.String())
 		})
 	}
-}
-
-func assertChallengeStringEqual(t *testing.T, expected, actual string) {
-    t.Helper()
-
-	ep, ok := CutPrefix(expected)
-	assert.Equal(t, ok, true, "expected should have prefix")
-	ap, ok := CutPrefix(actual)
-	assert.Equal(t, ok, true, "actual should have prefix")
-
-	assert.DeepEqual(t, ep, ap)
 }
 
 func TestFindChallenge(t *testing.T) {
