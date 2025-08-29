@@ -25,11 +25,11 @@ func IsDigest(header string) bool {
 }
 
 // CutPrefix removes the digest prefix from the header value
-func CutPrefix(s string) (string, bool) {
-	if !IsDigest(s) {
-		return s, false
+func CutPrefix(header string) (string, bool) {
+	if !IsDigest(header) {
+		return header, false
 	}
-	return s[len(Prefix):], true
+	return header[len(Prefix):], true
 }
 
 // Options for creating a credentials
