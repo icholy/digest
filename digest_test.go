@@ -70,6 +70,30 @@ func TestDigestMD5(t *testing.T) {
 				Nc:       1,
 			},
 		},
+		{
+			Options{
+				Method:   "REGISTER",
+				URI:      "sip:182.82.132.122",
+				Username: "the-user",
+				Password: "********",
+				Cnonce:   "104adc6bd71f49678798ee646edcaa9a",
+			},
+			&Challenge{
+				Realm: "SipPeer",
+				Nonce: "970a1b42-d8a7-4fce-91a1-4767e9ed561b",
+				QOP:   []string{"auth"},
+			},
+			&Credentials{
+				Username: "the-user",
+				Realm:    "SipPeer",
+				Nonce:    "970a1b42-d8a7-4fce-91a1-4767e9ed561b",
+				URI:      "sip:182.82.132.122",
+				Response: "6cf0981e056709d40c8acc40c87e73c6",
+				Cnonce:   "104adc6bd71f49678798ee646edcaa9a",
+				QOP:      "auth",
+				Nc:       1,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {

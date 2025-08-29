@@ -31,7 +31,7 @@ func (c *Challenge) SupportsQOP(qop string) bool {
 
 // ParseChallenge parses the WWW-Authenticate header challenge
 func ParseChallenge(s string) (*Challenge, error) {
-	s, ok := strings.CutPrefix(s, Prefix)
+	s, ok := CutPrefix(s)
 	if !ok {
 		return nil, errors.New("digest: invalid challenge prefix")
 	}

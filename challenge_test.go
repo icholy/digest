@@ -12,6 +12,7 @@ import (
 func TestChallenge(t *testing.T) {
 	tests := []struct {
 		input     string
+		output    string
 		challenge *Challenge
 	}{
 		{
@@ -33,13 +34,25 @@ func TestChallenge(t *testing.T) {
 				QOP:       []string{"auth"},
 			},
 		},
+		{
+			input:  `DIGEST realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
+			output: `Digest realm="DLI LPC92601002528", nonce="NZAeQHhoCNifFjFa"`,
+			challenge: &Challenge{
+				Realm: "DLI LPC92601002528",
+				Nonce: "NZAeQHhoCNifFjFa",
+			},
+		},
 	}
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			c, err := ParseChallenge(tt.input)
 			assert.NilError(t, err)
 			assert.DeepEqual(t, tt.challenge, c)
-			assert.DeepEqual(t, c.String(), tt.input)
+			output := tt.output
+			if output == "" {
+				output = tt.input
+			}
+			assert.DeepEqual(t, output, c.String())
 		})
 	}
 }

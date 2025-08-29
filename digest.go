@@ -18,7 +18,18 @@ const Prefix = "Digest "
 
 // IsDigest returns true if the header value is a digest auth header
 func IsDigest(header string) bool {
-	return strings.HasPrefix(header, Prefix)
+	if len(header) < len(Prefix) {
+		return false
+	}
+	return strings.EqualFold(header[:len(Prefix)], Prefix)
+}
+
+// CutPrefix removes the digest prefix from the header value
+func CutPrefix(s string) (string, bool) {
+	if !IsDigest(s) {
+		return s, false
+	}
+	return s[len(Prefix):], true
 }
 
 // Options for creating a credentials
