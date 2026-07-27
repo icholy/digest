@@ -69,6 +69,49 @@ func TestTransport(t *testing.T) {
 	assert.Equal(t, string(body), "Hello World")
 }
 
+func TestTransportPreflight(t *testing.T) {
+	username := "foo"
+	password := "bar"
+	chal := &Challenge{Realm: "test", Nonce: "jgdfsijdfisd", Algorithm: "MD5", QOP: []string{"auth"}}
+
+	var reqCount, unauthBodyLen int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		reqCount++
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			// The preflight (challenge-discovery) request must carry no body.
+			unauthBodyLen = len(body)
+			w.Header().Add("WWW-Authenticate", chal.String())
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		// The authenticated request must carry the real body.
+		assert.Equal(t, string(body), "The Body")
+		cred, err := ParseCredentials(auth)
+		assert.NilError(t, err)
+		cred2, err := Digest(chal, Options{Method: r.Method, URI: r.URL.RequestURI(), Cnonce: cred.Cnonce, Count: cred.Nc, Username: username, Password: password})
+		assert.NilError(t, err)
+		if cred.Response != cred2.Response {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		io.WriteString(w, "Hello World")
+	}))
+	defer ts.Close()
+
+	client := http.Client{Transport: &Transport{Username: username, Password: password, Preflight: true}}
+	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader("The Body"))
+	assert.NilError(t, err)
+	res, err := client.Do(req)
+	assert.NilError(t, err)
+	body, err := io.ReadAll(res.Body)
+	assert.NilError(t, err)
+	assert.Equal(t, string(body), "Hello World")
+	assert.Equal(t, reqCount, 2)      // discovery + authenticated upload
+	assert.Equal(t, unauthBodyLen, 0) // body was NOT streamed on the unauthenticated request
+}
+
 func TestTransportLive(t *testing.T) {
 	tests := []struct {
 		name     string

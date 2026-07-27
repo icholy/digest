@@ -45,6 +45,14 @@ type Transport struct {
 	// NoReuse prevents the transport from reusing challenges.
 	NoReuse bool
 
+	// Preflight, when set, discovers the digest challenge with a bodyless request
+	// before sending a request that carries a body, instead of streaming the body
+	// on the initial unauthenticated request. This helps servers that answer the
+	// challenge with a 401 and immediately close the connection without draining
+	// the body (which breaks the pipe on large uploads), and it avoids sending the
+	// body twice. It only takes effect when no challenge is cached yet.
+	Preflight bool
+
 	// cache of challenges indexed by host
 	cache   map[string]*cchal
 	cacheMu sync.Mutex
@@ -146,10 +154,18 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if tr == nil {
 		tr = http.DefaultTransport
 	}
+	bodied := req.Body != nil && req.Body != http.NoBody
 	// don't modify the original request
 	clone, err := cloner(req)
 	if err != nil {
 		return nil, err
+	}
+	// discover the challenge with a bodyless request first, if configured, so the
+	// bodied request below goes out already authenticated
+	if t.Preflight && bodied && !t.cached(req) {
+		if err := t.discover(tr, clone); err != nil {
+			return nil, err
+		}
 	}
 	// make a copy of the request
 	first, err := clone()
@@ -185,6 +201,40 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	return tr.RoundTrip(second)
+}
+
+// cached reports whether a challenge is already cached for the request's host.
+func (t *Transport) cached(req *http.Request) bool {
+	t.cacheMu.Lock()
+	defer t.cacheMu.Unlock()
+	_, ok := t.cache[req.URL.Hostname()]
+	return ok
+}
+
+// discover sends a bodyless copy of the request to obtain and cache the digest
+// challenge, so the subsequent bodied request can be sent already authenticated.
+// A non-401 response is left uncached: the caller falls back to the normal flow.
+func (t *Transport) discover(tr http.RoundTripper, clone func() (*http.Request, error)) error {
+	probe, err := clone()
+	if err != nil {
+		return err
+	}
+	probe.Body = http.NoBody
+	probe.ContentLength = 0
+	probe.GetBody = func() (io.ReadCloser, error) { return http.NoBody, nil }
+	res, err := tr.RoundTrip(probe)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	_, _ = io.Copy(io.Discard, res.Body)
+	if res.StatusCode != http.StatusUnauthorized {
+		return nil
+	}
+	if err := t.save(res); err != nil && err != ErrNoChallenge {
+		return err
+	}
+	return nil
 }
 
 // CloseIdleConnections delegates the call to the underlying transport.
