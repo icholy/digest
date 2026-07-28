@@ -131,7 +131,7 @@ func main() {
 ```
 
 
-## Large Request Bodies (Preflight)
+## Large Request Bodies (Probe)
 
 By default the first (unauthenticated) request already carries the body, because
 that request is what surfaces the `401` challenge. Most servers drain that body
@@ -140,7 +140,7 @@ however, answer the `401` immediately and close the connection *without* drainin
 the body — with a large body the write then fails with a broken pipe before the
 challenge is ever read.
 
-Set `Preflight` to discover the challenge with a bodyless request first, so the
+Set `Probe` to discover the challenge with a bodyless request first, so the
 body is only ever sent on the authenticated request:
 
 ``` go
@@ -156,9 +156,9 @@ import (
 func main() {
 	client := &http.Client{
 		Transport: &digest.Transport{
-			Username:  "foo",
-			Password:  "bar",
-			Preflight: true,
+			Username: "foo",
+			Password: "bar",
+			Probe:    true,
 		},
 	}
 	f, _ := os.Open("large.bin")
@@ -171,7 +171,7 @@ func main() {
 }
 ```
 
-`Preflight` only adds the extra round-trip when there is no cached challenge yet
+`Probe` only adds the extra round-trip when there is no cached challenge yet
 and the request has a body; once a challenge is cached, requests go out
 authenticated on the first try as usual.
 

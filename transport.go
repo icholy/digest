@@ -45,13 +45,13 @@ type Transport struct {
 	// NoReuse prevents the transport from reusing challenges.
 	NoReuse bool
 
-	// Preflight, when set, discovers the digest challenge with a bodyless request
+	// Probe, when set, discovers the digest challenge with a bodyless request
 	// before sending a request that carries a body, instead of streaming the body
 	// on the initial unauthenticated request. This helps servers that answer the
 	// challenge with a 401 and immediately close the connection without draining
 	// the body (which breaks the pipe on large uploads), and it avoids sending the
 	// body twice. It only takes effect when no challenge is cached yet.
-	Preflight bool
+	Probe bool
 
 	// cache of challenges indexed by host
 	cache   map[string]*cchal
@@ -162,7 +162,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// discover the challenge with a bodyless request first, if configured, so the
 	// bodied request below goes out already authenticated
-	if t.Preflight && bodied && !t.cached(req) {
+	if t.Probe && bodied && !t.cached(req) {
 		if err := t.discover(tr, clone); err != nil {
 			return nil, err
 		}

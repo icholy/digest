@@ -69,7 +69,7 @@ func TestTransport(t *testing.T) {
 	assert.Equal(t, string(body), "Hello World")
 }
 
-func TestTransportPreflight(t *testing.T) {
+func TestTransportProbe(t *testing.T) {
 	username := "foo"
 	password := "bar"
 	chal := &Challenge{Realm: "test", Nonce: "jgdfsijdfisd", Algorithm: "MD5", QOP: []string{"auth"}}
@@ -80,7 +80,7 @@ func TestTransportPreflight(t *testing.T) {
 		reqCount++
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
-			// The preflight (challenge-discovery) request must carry no body.
+			// The probe (challenge-discovery) request must carry no body.
 			unauthBodyLen = len(body)
 			w.Header().Add("WWW-Authenticate", chal.String())
 			w.WriteHeader(http.StatusUnauthorized)
@@ -100,7 +100,7 @@ func TestTransportPreflight(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := http.Client{Transport: &Transport{Username: username, Password: password, Preflight: true}}
+	client := http.Client{Transport: &Transport{Username: username, Password: password, Probe: true}}
 	req, err := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader("The Body"))
 	assert.NilError(t, err)
 	res, err := client.Do(req)
