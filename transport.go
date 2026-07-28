@@ -45,6 +45,11 @@ type Transport struct {
 	// NoReuse prevents the transport from reusing challenges.
 	NoReuse bool
 
+	// Probe discovers the challenge with a bodyless request before streaming the
+	// body, so it's only sent once authenticated — for servers that reject the
+	// unauthenticated request without draining the body. Applies only when uncached.
+	Probe bool
+
 	// cache of challenges indexed by host
 	cache   map[string]*cchal
 	cacheMu sync.Mutex
@@ -114,9 +119,10 @@ func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
 	return cc.c, cc.n, true
 }
 
-// prepare attempts to find a cached challenge that matches the
-// requested domain, and use it to set the Authorization header
-func (t *Transport) prepare(req *http.Request) error {
+// prepare sets the Authorization header from a cached challenge if one exists.
+// It reports whether the caller should send a bodyless probe first (Probe set,
+// request has a body, no challenge cached yet).
+func (t *Transport) prepare(req *http.Request) (bool, error) {
 	// add cookies
 	if t.Jar != nil {
 		for _, cookie := range t.Jar.Cookies(req.URL) {
@@ -126,16 +132,18 @@ func (t *Transport) prepare(req *http.Request) error {
 	// add auth
 	chal, count, ok := t.challenge(req)
 	if !ok {
-		return nil
+		// no cached challenge yet: probe bodyless first when configured
+		bodied := req.Body != nil && req.Body != http.NoBody
+		return t.Probe && bodied, nil
 	}
 	cred, err := t.digest(req, chal, count)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if cred != nil {
 		req.Header.Set("Authorization", cred.String())
 	}
-	return nil
+	return false, nil
 }
 
 // RoundTrip will try to authorize the request using a cached challenge.
@@ -157,8 +165,15 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// prepare the first request using a cached challenge
-	if err := t.prepare(first); err != nil {
+	probe, err := t.prepare(first)
+	if err != nil {
 		return nil, err
+	}
+	// probe bodyless so the body is only streamed on the authenticated retry
+	if probe {
+		first.Body = nil
+		first.ContentLength = 0
+		first.GetBody = nil
 	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
@@ -181,7 +196,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// prepare the second request based on the new challenge
-	if err := t.prepare(second); err != nil {
+	if _, err := t.prepare(second); err != nil {
 		return nil, err
 	}
 	return tr.RoundTrip(second)

@@ -131,6 +131,50 @@ func main() {
 ```
 
 
+## Large Request Bodies (Probe)
+
+By default the first (unauthenticated) request already carries the body, because
+that request is what surfaces the `401` challenge. Most servers drain that body
+before replying, so the only cost is sending the body twice. Some servers,
+however, answer the `401` immediately and close the connection *without* draining
+the body — with a large body the write then fails with a broken pipe before the
+challenge is ever read.
+
+Set `Probe` to discover the challenge with a bodyless request first, so the
+body is only ever sent on the authenticated request:
+
+``` go
+package main
+
+import (
+	"net/http"
+	"os"
+
+	"github.com/icholy/digest"
+)
+
+func main() {
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Username: "foo",
+			Password: "bar",
+			Probe:    true,
+		},
+	}
+	f, _ := os.Open("large.bin")
+	defer f.Close()
+	res, err := client.Post("http://localhost:8080/upload", "application/octet-stream", f)
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+}
+```
+
+`Probe` only adds the extra round-trip when there is no cached challenge yet
+and the request has a body; once a challenge is cached, requests go out
+authenticated on the first try as usual.
+
 ## Low Level API
 
 ``` go
