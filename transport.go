@@ -45,12 +45,9 @@ type Transport struct {
 	// NoReuse prevents the transport from reusing challenges.
 	NoReuse bool
 
-	// Probe, when set, discovers the digest challenge with a bodyless request
-	// before sending a request that carries a body, instead of streaming the body
-	// on the initial unauthenticated request. This helps servers that answer the
-	// challenge with a 401 and immediately close the connection without draining
-	// the body (which breaks the pipe on large uploads), and it avoids sending the
-	// body twice. It only takes effect when no challenge is cached yet.
+	// Probe discovers the challenge with a bodyless request before streaming the
+	// body, so it's only sent once authenticated — for servers that reject the
+	// unauthenticated request without draining the body. Applies only when uncached.
 	Probe bool
 
 	// cache of challenges indexed by host
@@ -122,9 +119,10 @@ func (t *Transport) challenge(req *http.Request) (*Challenge, int, bool) {
 	return cc.c, cc.n, true
 }
 
-// prepare attempts to find a cached challenge that matches the
-// requested domain, and use it to set the Authorization header
-func (t *Transport) prepare(req *http.Request) error {
+// prepare sets the Authorization header from a cached challenge if one exists.
+// It reports whether the caller should send a bodyless probe first (Probe set,
+// request has a body, no challenge cached yet).
+func (t *Transport) prepare(req *http.Request) (bool, error) {
 	// add cookies
 	if t.Jar != nil {
 		for _, cookie := range t.Jar.Cookies(req.URL) {
@@ -134,16 +132,18 @@ func (t *Transport) prepare(req *http.Request) error {
 	// add auth
 	chal, count, ok := t.challenge(req)
 	if !ok {
-		return nil
+		// no cached challenge yet: probe bodyless first when configured
+		bodied := req.Body != nil && req.Body != http.NoBody
+		return t.Probe && bodied, nil
 	}
 	cred, err := t.digest(req, chal, count)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if cred != nil {
 		req.Header.Set("Authorization", cred.String())
 	}
-	return nil
+	return false, nil
 }
 
 // RoundTrip will try to authorize the request using a cached challenge.
@@ -154,18 +154,10 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if tr == nil {
 		tr = http.DefaultTransport
 	}
-	bodied := req.Body != nil && req.Body != http.NoBody
 	// don't modify the original request
 	clone, err := cloner(req)
 	if err != nil {
 		return nil, err
-	}
-	// discover the challenge with a bodyless request first, if configured, so the
-	// bodied request below goes out already authenticated
-	if t.Probe && bodied && !t.cached(req) {
-		if err := t.discover(tr, clone); err != nil {
-			return nil, err
-		}
 	}
 	// make a copy of the request
 	first, err := clone()
@@ -173,8 +165,15 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// prepare the first request using a cached challenge
-	if err := t.prepare(first); err != nil {
+	probe, err := t.prepare(first)
+	if err != nil {
 		return nil, err
+	}
+	// probe bodyless so the body is only streamed on the authenticated retry
+	if probe {
+		first.Body = nil
+		first.ContentLength = 0
+		first.GetBody = nil
 	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
@@ -197,44 +196,10 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	// prepare the second request based on the new challenge
-	if err := t.prepare(second); err != nil {
+	if _, err := t.prepare(second); err != nil {
 		return nil, err
 	}
 	return tr.RoundTrip(second)
-}
-
-// cached reports whether a challenge is already cached for the request's host.
-func (t *Transport) cached(req *http.Request) bool {
-	t.cacheMu.Lock()
-	defer t.cacheMu.Unlock()
-	_, ok := t.cache[req.URL.Hostname()]
-	return ok
-}
-
-// discover sends a bodyless copy of the request to obtain and cache the digest
-// challenge, so the subsequent bodied request can be sent already authenticated.
-// A non-401 response is left uncached: the caller falls back to the normal flow.
-func (t *Transport) discover(tr http.RoundTripper, clone func() (*http.Request, error)) error {
-	probe, err := clone()
-	if err != nil {
-		return err
-	}
-	probe.Body = nil
-	probe.ContentLength = 0
-	probe.GetBody = nil
-	res, err := tr.RoundTrip(probe)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-	_, _ = io.Copy(io.Discard, res.Body)
-	if res.StatusCode != http.StatusUnauthorized {
-		return nil
-	}
-	if err := t.save(res); err != nil && err != ErrNoChallenge {
-		return err
-	}
-	return nil
 }
 
 // CloseIdleConnections delegates the call to the underlying transport.
