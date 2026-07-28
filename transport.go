@@ -177,8 +177,22 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	// the first request will either succeed or return a 401
 	res, err := tr.RoundTrip(first)
-	if err != nil || res.StatusCode != http.StatusUnauthorized {
+	if err != nil {
 		return res, err
+	}
+	if res.StatusCode != http.StatusUnauthorized {
+		if !probe {
+			return res, nil
+		}
+		// a probe response isn't valid for the caller since the body was
+		// stripped; discard it and send the real request as-is
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+		second, err := clone()
+		if err != nil {
+			return nil, err
+		}
+		return tr.RoundTrip(second)
 	}
 	// drain and close the first message body
 	_, _ = io.Copy(io.Discard, res.Body)

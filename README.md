@@ -171,9 +171,12 @@ func main() {
 }
 ```
 
-`Probe` only adds the extra round-trip when there is no cached challenge yet
-and the request has a body; once a challenge is cached, requests go out
-authenticated on the first try as usual.
+In the normal flow `Probe` costs no extra round-trip: the bodyless request
+simply replaces the unauthenticated request that would otherwise have carried
+the body. If the server answers the bodyless request with something other than
+a `401`, that response is discarded and the original request is sent as-is.
+Once a challenge is cached, requests go out authenticated on the first try as
+usual.
 
 ## Low Level API
 
