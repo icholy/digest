@@ -219,9 +219,9 @@ func (t *Transport) discover(tr http.RoundTripper, clone func() (*http.Request, 
 	if err != nil {
 		return err
 	}
-	probe.Body = http.NoBody
+	probe.Body = nil
 	probe.ContentLength = 0
-	probe.GetBody = func() (io.ReadCloser, error) { return http.NoBody, nil }
+	probe.GetBody = nil
 	res, err := tr.RoundTrip(probe)
 	if err != nil {
 		return err
