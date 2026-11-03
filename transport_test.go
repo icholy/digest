@@ -191,4 +191,59 @@ func TestTransportNoChallenge(t *testing.T) {
 	res2, err := client.Get(ts.URL)
 	assert.NilError(t, err)
 	assert.Equal(t, res2.StatusCode, http.StatusUnauthorized)
+	body, err := io.ReadAll(res2.Body)
+	res2.Body.Close()
+	assert.NilError(t, err)
+	assert.Equal(t, string(body), "Unauthorized\n")
+}
+
+func TestTransportNoChallengeBody(t *testing.T) {
+	for _, authenticate := range []string{"", `Basic realm="test"`, `Bearer realm="test"`} {
+		t.Run(authenticate, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if authenticate != "" {
+					w.Header().Set("WWW-Authenticate", authenticate)
+				}
+				http.Error(w, "authentication required", http.StatusUnauthorized)
+			}))
+			defer ts.Close()
+			client := http.Client{Transport: &Transport{}}
+			defer client.CloseIdleConnections()
+			for i := 0; i < 2; i++ {
+				res, err := client.Get(ts.URL)
+				assert.NilError(t, err)
+				body, err := io.ReadAll(res.Body)
+				res.Body.Close()
+				assert.NilError(t, err)
+				assert.Equal(t, res.StatusCode, http.StatusUnauthorized)
+				assert.Equal(t, res.Header.Get("WWW-Authenticate"), authenticate)
+				assert.Equal(t, string(body), "authentication required\n")
+			}
+		})
+	}
+}
+
+func TestTransportMalformedChallengeReusesConnection(t *testing.T) {
+	addresses := make(chan string, 2)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		addresses <- r.RemoteAddr
+		if r.URL.Path == "/bad" {
+			w.Header().Set("WWW-Authenticate", "Digest invalid")
+			http.Error(w, "invalid challenge", http.StatusUnauthorized)
+			return
+		}
+		io.WriteString(w, "success")
+	}))
+	defer ts.Close()
+	client := http.Client{Transport: &Transport{}}
+	defer client.CloseIdleConnections()
+	_, err := client.Get(ts.URL + "/bad")
+	assert.ErrorContains(t, err, "digest: invalid challenge")
+	res, err := client.Get(ts.URL + "/good")
+	assert.NilError(t, err)
+	body, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	assert.NilError(t, err)
+	assert.Equal(t, string(body), "success")
+	assert.Equal(t, <-addresses, <-addresses)
 }

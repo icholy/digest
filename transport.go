@@ -194,14 +194,16 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		return tr.RoundTrip(second)
 	}
+	// Save the challenge before discarding the response. Without a challenge,
+	// the caller owns the response body and must be able to read it.
+	err = t.save(res)
+	if err == ErrNoChallenge {
+		return res, nil
+	}
 	// drain and close the first message body
 	_, _ = io.Copy(io.Discard, res.Body)
 	_ = res.Body.Close()
-	// save the challenge for future use
-	if err := t.save(res); err != nil {
-		if err == ErrNoChallenge {
-			return res, nil
-		}
+	if err != nil {
 		return nil, err
 	}
 	// make a second copy of the request
